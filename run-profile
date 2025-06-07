@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-gcc $(find src/*.c) -o build/clox.out -pg
-./build/clox.out "$@"
+gcc $(find src/*.c) -o build/craven.out -pg
+./build/craven.out "$@"
 mv gmon.out build/gmon.out
-gprof build/clox.out build/gmon.out > build/gprof.log
+gprof build/craven.out build/gmon.out > build/gprof.log

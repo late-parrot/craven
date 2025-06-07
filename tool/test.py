@@ -9,7 +9,7 @@ RST = "\033[0m"
 
 base_dir = Path(".")
 test_dir = base_dir / "unittest"
-lang_bin = base_dir / "build" / "clox.out"
+lang_bin = base_dir / "build" / "craven.out"
 glob = "*.rvn"
 
 passed = 0

@@ -1,5 +1,5 @@
-#ifndef clox_chunk_h
-#define clox_chunk_h
+#ifndef craven_chunk_h
+#define craven_chunk_h
 
 #include "common.h"
 #include "value.h"

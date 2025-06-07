@@ -1,5 +1,5 @@
-#ifndef clox_scanner_h
-#define clox_scanner_h
+#ifndef craven_scanner_h
+#define craven_scanner_h
 
 /**
  * Represents the type of a token. Scanning errors are passed on with
