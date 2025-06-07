@@ -1,0 +1,137 @@
+# Raven grammar
+#
+# General grammatical elements and rules:
+#
+# * Strings with single quotes (') denote KEYWORDS or SYMBOLS
+# * Upper case names (NAME) denote tokens in the Grammar/Tokens file
+# * Both of these return a Token object
+#
+# Grammar Syntax:
+#
+# rule_name: expression
+#   The format for any rule. The generated parser will return the
+#   parse tree of expression.
+# e1 e2
+#   Match e1, then match e2
+# e1 | e2
+#   Match e1 or e2, prefering e1.
+#   The first alternative can also appear on the line after the rule name for
+#   formatting purposes. In that case, a | must be used before the first
+#   alternative, like so:
+#       rule_name:
+#            | first_alt
+#            | second_alt 
+# x:e
+#   Bind the result of e to the name x. A member for the Parse Tree class
+#   will be created with the name x if and only if a binding is present.
+#   If x is a * or + expression, the result of e will be appended to a vector
+#   stored as a member.
+# ( e )
+#   Match e (allows also to use other operators in the group like '(e)*').
+# e?
+#   Optionally match e.
+# e*
+#   Match zero or more occurrences of e.
+# e+
+#   Match one or more occurrences of e.
+# e ** s
+#   Match zero or more occurrences of e, separated by s. This is
+#   identical to (e (s e)*)?. s *will* be in the parse tree just as
+#   it would be if this equivalent expression were simply used instead.
+# e ++ s
+#   Match one or more occurrences of e, separated by s. This is
+#   identical to (e (s e)*). s *will* be in the parse tree just as
+#   it would be if this equivalent expression were simply used instead.
+# &e
+#   Succeed if e can be parsed, without consuming any input.
+# !e
+#   Fail if e can be parsed, without consuming any input.
+# ~
+#   Commit to the current alternative, even if it fails to parse.
+# <error "message">
+#   Fail to parse and give a SyntaxError with the included message.
+#   If no message is provided, the parser will fail with the
+#   message "expected rule_name".
+
+# ENTRYPOINTS
+# ===========
+
+file: program
+repl: stmt?
+program: EOF | statements:stmt* EOF
+
+# STATEMENTS
+# ==========
+
+stmt:
+    | call-stmt
+    | assign-stmt
+    | logic-stmt
+    | declaration
+    | <error "Expected statement">
+
+call-stmt: callee:grouping ('(' ')' | '(' arguments:arguments ')')+
+assign-stmt:
+    | target:assign-target operator_:aug-assign expression:expr
+    | target:assign-target (operator_:'++' | operator_:'--')
+    | (prefixOperator:'++' | prefixOperator:'--') target:assign-target
+    | (operator_:'++' | operator_:'--') target:assign-target
+
+logic-stmt:
+    | block
+    | if
+    | while
+    | for
+
+# DECLARATIONS
+# ============
+
+declaration:
+    | var-decl
+    | func
+
+var-decl: 'var' name:NAME ('=' initializer:expr)?
+func: 'func' name:NAME '(' parameters:parameters ')' body:block
+
+# EXPRESSIONS
+# ===========
+
+expr:
+    | if
+    | while
+    | for
+    | func
+    | assign
+    | <error "Expected expression">
+
+block: '{' '}' | '{' statements:stmt ** !'}' '}'
+if: 'if' condition:expr body:block
+while:
+    | 'while' condition:expr body:block
+    | do_:'do' body:block 'while' condition:expr
+for: 'for' (names:NAME ++ ',') 'in' (expressions:expr ++ ',') body:block
+
+assign:
+    | target:assign-target operator_:aug-assign expression:expr
+    | target:assign-target (operator_:'++' | operator_:'--')
+    | (prefixOperator:'++' | prefixOperator:'--') target:assign-target
+    | binary
+binary: # See precedence.md for description of operators
+unary: # See precedence.md for description of operators
+call:
+    | callee:grouping ('(' ')' | '(' arguments:arguments ')')+
+    | grouping
+grouping: '(' expression:expr ')' | atom
+atom: expression:(NAME | NUMBER | STRING)
+
+# UTILITY RULES
+# =============
+
+parameters: names:NAME ** ','
+arguments: expressions:expr ** ','
+assign-target: NAME
+aug-assign:
+    | '=' | '+=' | '-='
+    | '*=' | '/=' | '%='
+    | '**='
+name-or-attr: NAME

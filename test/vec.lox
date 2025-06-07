@@ -1,0 +1,19 @@
+fun vector(x, y) {
+    fun add(other) {
+        return vector(x+other("x"), y+other("y"));
+    }
+    fun vec(mthd) {
+        if (mthd == "x") return x;
+        if (mthd == "y") return y;
+        if (mthd == "add") return add;
+        else return "Unknown method";
+    }
+    return vec;
+}
+
+var a = vector(1,2);
+var b = vector(2,3);
+var c = a("add")(b);
+
+print c("x");
+print c("y");
