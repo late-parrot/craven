@@ -231,7 +231,8 @@ static void defineMethod(ObjString* name) {
 }
 
 static bool isFalsey(Value value) {
-    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value))
+        || (IS_NUMBER(value) && AS_NUMBER(value) == 0);
 }
 
 static void concatenate() {
@@ -318,8 +319,7 @@ static InterpretResult run() {
             }
             case OP_DEFINE_GLOBAL: {
                 ObjString* name = READ_STRING();
-                tableSet(&vm.globals, name, peek(0));
-                pop();
+                tableSet(&vm.globals, name, pop());
                 break;
             }
             case OP_SET_GLOBAL: {
@@ -420,7 +420,7 @@ static InterpretResult run() {
                 break;
             }
             case OP_PRINT: {
-                printValue(pop());
+                printValue(peek(0));
                 printf("\n");
                 break;
             }

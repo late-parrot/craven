@@ -35,19 +35,19 @@ for f in test_dir.glob(glob):
         continue
     out = subprocess.run([lang_bin, f], capture_output=True)
     stdout, stderr, exitcode = out.stdout.strip().decode(), out.stderr.strip().decode(), out.returncode
-    if stdout != expected:
-        failed += 1
-        stdout = "\n".join(["    "+x for x in stdout.splitlines()]) if stdout else "    (nothing)"
-        expected = "\n".join(["    "+x for x in expected.splitlines()]) if expected else "    (nothing)"
-        print(f"{RED}✘ Test '{name}' failed. Expected stdout:\n{BLU}{expected}{RED}\n"+
-              f"  Recieved this instead:\n{BLU}{stdout}{RST}")
-        continue
     if stderr != error:
         failed += 1
         stderr = "\n".join(["    "+x for x in stderr.splitlines()]) if stderr else "    (nothing)"
         error = "\n".join(["    "+x for x in error.splitlines()]) if error else "    (nothing)"
         print(f"{RED}✘ Test '{name}' failed. Expected stderr:\n{BLU}{error}{RED}\n"+
               f"  Recieved this instead:\n{BLU}{stderr}{RST}")
+        continue
+    if stdout != expected:
+        failed += 1
+        stdout = "\n".join(["    "+x for x in stdout.splitlines()]) if stdout else "    (nothing)"
+        expected = "\n".join(["    "+x for x in expected.splitlines()]) if expected else "    (nothing)"
+        print(f"{RED}✘ Test '{name}' failed. Expected stdout:\n{BLU}{expected}{RED}\n"+
+              f"  Recieved this instead:\n{BLU}{stdout}{RST}")
         continue
     if status is not None and exitcode != status:
         failed += 1
