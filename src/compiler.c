@@ -433,6 +433,37 @@ static void dot(bool canAssign) {
     }
 }
 
+static void grouping(bool canAssign) {
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+}
+
+static void index_(bool canAssign) {
+    expression();
+    consume(TOKEN_RIGHT_SQUARE, "Expect ']' after index.");
+    if (canAssign && match(TOKEN_EQUAL)) {
+        expression();
+        emitByte(OP_SET_INDEX);
+    } else {
+        emitByte(OP_GET_INDEX);
+    }
+}
+
+static void list(bool canAssign) {
+    uint8_t elemCount = 0;
+    if (!check(TOKEN_RIGHT_SQUARE)) {
+        do {
+            expression();
+            if (elemCount == 255) {
+                error("Can't have more than 255 elements.");
+            }
+            elemCount++;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_SQUARE, "Expect ']' after list elements.");
+    emitBytes(OP_LIST, elemCount);
+}
+
 static void literal(bool canAssign) {
     switch (parser.previous.type) {
         case TOKEN_FALSE: emitByte(OP_FALSE); break;
@@ -440,11 +471,6 @@ static void literal(bool canAssign) {
         case TOKEN_TRUE: emitByte(OP_TRUE); break;
         default: return; // Unreachable.
     }
-}
-
-static void grouping(bool canAssign) {
-    expression();
-    consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
 static void number(bool canAssign) {
@@ -549,6 +575,8 @@ ParseRule rules[] = {
     [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
     [TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE}, 
     [TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
+    [TOKEN_LEFT_SQUARE]   = {list,     index_, PREC_CALL},
+    [TOKEN_RIGHT_SQUARE]  = {NULL,     NULL,   PREC_NONE},
     [TOKEN_COMMA]         = {NULL,     NULL,   PREC_NONE},
     [TOKEN_DOT]           = {NULL,     dot,    PREC_CALL},
     [TOKEN_MINUS]         = {unary,    binary, PREC_TERM},
@@ -814,11 +842,13 @@ static void returnStatement() {
 }
 
 static void whileStatement() {
+    emitByte(OP_NIL);
+
     int loopStart = currentChunk()->count;
     expression();
 
     int exitJump = emitJump(OP_JUMP_IF_FALSE);
-    emitByte(OP_POP);
+    emitBytes(OP_POP, OP_POP);
     consume(TOKEN_LEFT_BRACE, "Expected '{' for 'while' body");
     block();
     emitLoop(loopStart);

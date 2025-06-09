@@ -75,6 +75,11 @@ static void blackenObject(Obj* object) {
             markObject((Obj*)bound->method);
             break;
         }
+        case OBJ_BOUND_NATIVE: {
+            ObjBoundNative* bound = (ObjBoundNative*)object;
+            markValue(bound->receiver);
+            break;
+        }
         case OBJ_CLASS: {
             ObjClass* klass = (ObjClass*)object;
             markObject((Obj*)klass->name);
@@ -101,6 +106,8 @@ static void blackenObject(Obj* object) {
             markTable(&instance->fields);
             break;
         }
+        case OBJ_LIST: {}
+            markArray(&((ObjList*)object)->values);
         case OBJ_UPVALUE:
             markValue(((ObjUpvalue*)object)->closed);
             break;
@@ -119,6 +126,9 @@ static void freeObject(Obj* object) {
     switch (object->type) {
         case OBJ_BOUND_METHOD:
             FREE(ObjBoundMethod, object);
+            break;
+        case OBJ_BOUND_NATIVE:
+            FREE(ObjBoundNative, object);
             break;
         case OBJ_CLASS: {
             ObjClass* klass = (ObjClass*)object;
@@ -144,6 +154,9 @@ static void freeObject(Obj* object) {
             FREE(ObjInstance, object);
             break;
         }
+        case OBJ_LIST:
+            FREE(ObjList, object);
+            break;
         case OBJ_NATIVE:
             FREE(ObjNative, object);
             break;

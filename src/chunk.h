@@ -46,6 +46,16 @@ typedef enum {
      */
     OP_FALSE,
     /**
+     * Pop ``elemCount`` values off of the stack and create a list from them.
+     * Stack effect is ``1-elemCount``.
+     * 
+     * :parameters:
+     *  * **elemCount** -- byte operand
+     * 
+     * STACK EFFECT: variable (see description)
+     */
+    OP_LIST,
+    /**
      * Pop a value off the top of the stack and discard. Useful for throwing away
      * values.
      * 
@@ -206,6 +216,22 @@ typedef enum {
      * STACK EFFECT: -1
      */
     OP_GET_SUPER,
+    /**
+     * Pop one value to use as the index, then pop the opject to index into. Push
+     * the value at the index indicated, or throw an error if the object isn't
+     * indexable or index is out of bounds, or if the index isn't a valid type.
+     * 
+     * STACK EFFECT: -1
+     */
+    OP_GET_INDEX,
+    /**
+     * Pop the assigned value off the top of the stack, then the index, then the
+     * value. Try to perform assignment and push the assigned value back onto the
+     * stack. Throws an error for unindexable object or invalid indicies.
+     * 
+     * STACK EFFECT: -2
+     */
+    OP_SET_INDEX,
     /**
      * Pop two operands and test for equality, pushing result.
      * 

@@ -8,7 +8,7 @@ YLW = "\033[33m"
 RST = "\033[0m"
 
 base_dir = Path(".")
-test_dir = base_dir / "unittest"
+test_dir = base_dir / "test" / "unittest"
 lang_bin = base_dir / "build" / "craven.out"
 glob = "*.rvn"
 
@@ -17,7 +17,12 @@ failed = 0
 skipped = 0
 
 for f in test_dir.glob(glob):
+    print(f"\r{GRN}{passed}{RST} Passed, {RED}{failed}{RST} Failed, {YLW}{skipped}{RST} Skipped.\r", end="")
+
     code = f.read_text()
+    if "// UNITTEST" not in code:
+        skipped += 1
+        continue
     config = code.split("// UNITTEST")[1].strip()
     options = {
         x.split(":")[0].lstrip("/").strip() : x.split(":")[1].strip().replace("\\n", "\n")
@@ -55,4 +60,4 @@ for f in test_dir.glob(glob):
         continue
     passed += 1
 
-print(f"{GRN}{passed}{RST} Passed, {RED}{failed}{RST} Failed, {YLW}{skipped}{RST} Skipped.")
+print(f"\r{GRN}{passed}{RST} Passed, {RED}{failed}{RST} Failed, {YLW}{skipped}{RST} Skipped.")
