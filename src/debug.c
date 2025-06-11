@@ -66,6 +66,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return simpleInstruction("OP_TRUE", offset);
         case OP_FALSE:
             return simpleInstruction("OP_FALSE", offset);
+        case OP_INT:
+            return byteInstruction("OP_INT", chunk, offset);
+        case OP_LIST:
+            return byteInstruction("OP_LIST", chunk, offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
         case OP_GET_LOCAL:
@@ -88,6 +92,10 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return constantInstruction("OP_SET_PROPERTY", chunk, offset);
         case OP_GET_SUPER:
             return constantInstruction("OP_GET_SUPER", chunk, offset);
+        case OP_GET_INDEX:
+            return simpleInstruction("OP_GET_INDEX", offset);
+        case OP_SET_INDEX:
+            return simpleInstruction("OP_SET_INDEX", offset);
         case OP_EQUAL:
             return simpleInstruction("OP_EQUAL", offset);
         case OP_GREATER:
@@ -112,6 +120,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return jumpInstruction("OP_JUMP", 1, chunk, offset);
         case OP_JUMP_IF_FALSE:
             return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
+        case OP_NEXT_JUMP:
+            return jumpInstruction("OP_NEXT_JUMP", 1, chunk, offset);
         case OP_LOOP:
             return jumpInstruction("OP_LOOP", -1, chunk, offset);
         case OP_CALL:

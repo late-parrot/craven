@@ -1,5 +1,5 @@
-#ifndef clox_object_h
-#define clox_object_h
+#ifndef craven_object_h
+#define craven_object_h
 
 #include "common.h"
 #include "chunk.h"
@@ -12,6 +12,9 @@
 /** Check to see if the value is an :c:struct:`ObjBoundMethod`. */
 #define IS_BOUND_METHOD(value) isObjType(value, OBJ_BOUND_METHOD)
 
+/** Check to see if the value is an :c:struct:`ObjBoundMethod`. */
+#define IS_BOUND_NATIVE(value) isObjType(value, OBJ_BOUND_NATIVE)
+
 /** Check to see if the value is an :c:struct:`ObjClass`. */
 #define IS_CLASS(value)        isObjType(value, OBJ_CLASS)
 
@@ -23,6 +26,9 @@
 
 /** Check to see if the value is an :c:struct:`ObjInstance`. */
 #define IS_INSTANCE(value)     isObjType(value, OBJ_INSTANCE)
+
+/** Check to see if the value is an :c:struct:`ObjList`. */
+#define IS_LIST(value)         isObjType(value, OBJ_LIST)
 
 /** Check to see if the value is an :c:struct:`ObjNative`. */
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
@@ -42,6 +48,19 @@
  *     a *really* good reason.
  */
 #define AS_BOUND_METHOD(value) ((ObjBoundMethod*)AS_OBJ(value))
+
+/**
+ * Cast the value to an :c:expr:`ObjBoundNative*`.
+ * 
+ * .. warning::
+ *     Converting :c:expr:`Value` s to C objects is unsafe and must be guarded
+ *     with one of the ``IS_`` macros. Otherwise, the ``AS_`` macros could
+ *     reinterpret random bits of memory, causing segfaults or UB.
+ * 
+ *     Always, *always* guard ``AS_`` macros with ``IS_`` macros, unless you have
+ *     a *really* good reason.
+ */
+#define AS_BOUND_NATIVE(value) ((ObjBoundNative*)AS_OBJ(value))
 
 /**
  * Cast the value to an :c:expr:`ObjClass*`.
@@ -96,6 +115,19 @@
 #define AS_INSTANCE(value)     ((ObjInstance*)AS_OBJ(value))
 
 /**
+ * Cast the value to an :c:expr:`ObjList*`.
+ * 
+ * .. warning::
+ *     Converting :c:expr:`Value` s to C objects is unsafe and must be guarded
+ *     with one of the ``IS_`` macros. Otherwise, the ``AS_`` macros could
+ *     reinterpret random bits of memory, causing segfaults or UB.
+ * 
+ *     Always, *always* guard ``AS_`` macros with ``IS_`` macros, unless you have
+ *     a *really* good reason.
+ */
+#define AS_LIST(value)     ((ObjList*)AS_OBJ(value))
+
+/**
  * Cast the value to an :c:expr:`ObjNative*`.
  * 
  * .. warning::
@@ -137,10 +169,12 @@
 
 typedef enum {
     OBJ_BOUND_METHOD,
+    OBJ_BOUND_NATIVE,
     OBJ_CLASS,
     OBJ_CLOSURE,
     OBJ_FUNCTION,
     OBJ_INSTANCE,
+    OBJ_LIST,
     OBJ_NATIVE,
     OBJ_STRING,
     OBJ_UPVALUE
@@ -195,18 +229,20 @@ typedef struct {
 /**
  * The function sygnature for a native function callback. Native functions take in
  * the number of arguments that they are given, as well as the pointer to the first
- * one, from the stack. The callback must return a value, which will be the result
- * of the native function.
+ * one, from the stack. The callback must return a boolean, indicating if the function
+ * threw an error.
  * 
  * For example:
  * 
  * .. code-block:: c
  * 
- *     static Value clockNative(int argCount, Value* args) {
- *         return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+ *     static bool clockNative(int argCount, Value* args) {
+ *         push(NUMBER_VAL((double)clock() / CLOCKS_PER_SEC));
+ *         if (argCount != 0) runtimeError("0 args expected but got %d.", argCount);
+ *         return argCount == 0;
  *     }
  */
-typedef Value (*NativeFn)(int argCount, Value* args);
+typedef bool (*NativeFn)(int argCount, Value* args);
 
 /**
  * A native function is a function in CRaven whose code is written and run with C.
@@ -222,6 +258,26 @@ typedef struct {
     /** The actual pointer to a native function callback. */
     NativeFn function;
 } ObjNative;
+
+/**
+ * Very similar to :c:struct:`ObjBoundMethod`, stores a method and an object
+ * for it to be called on, but using a native function to allow native
+ * method calls.
+ */
+typedef struct {
+    /**
+     * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
+     * :c:expr:`Obj*`.
+     */
+    Obj obj;
+    /**
+     * The actual native function callback, which should expect the *before*
+     * its argument pointer to be the value it was bound to (i.e. ``args[-1]``).
+     */
+    NativeFn method;
+    /** The value that this native function was bound to. */
+    Value receiver;
+} ObjBoundNative;
 
 /**
  * Represents a string in the program, whether constant or created at runtime.
@@ -316,6 +372,22 @@ typedef struct {
     Table fields;
 } ObjInstance;
 
+/**
+ * Raven's most basic collection type, a simple wrapper over a
+ * :c:struct:`ValueArray`.
+ */
+typedef struct {
+    /**
+     * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
+     * :c:expr:`Obj*`.
+     */
+    Obj obj;
+    /**
+     * The dynamic array containing all of the values.
+     */
+    ValueArray values;
+} ObjList;
+
 typedef struct {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
@@ -327,10 +399,12 @@ typedef struct {
 } ObjBoundMethod;
 
 ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method);
+ObjBoundNative* newBoundNative(Value receiver, NativeFn method);
 ObjClass* newClass(ObjString* name);
 ObjClosure* newClosure(ObjFunction* function);
 ObjFunction* newFunction();
 ObjInstance* newInstance(ObjClass* klass);
+ObjList* newList();
 ObjNative* newNative(NativeFn function);
 ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);

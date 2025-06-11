@@ -1,0 +1,19 @@
+var hello = "world";
+print hello[0];
+print hello[1];
+print hello[0];
+print hello.length;
+
+var x = [1, 2, 3];
+print x;
+print x[0];
+print x[1];
+print x[2];
+
+x[0] = 12;
+
+var a = x.append(4);
+print x;
+
+// UNITTEST
+// expected: w\no\nw\n5\n[1, 2, 3]\n1\n2\n3\n[12, 2, 3, 4]

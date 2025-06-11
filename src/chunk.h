@@ -1,5 +1,5 @@
-#ifndef clox_chunk_h
-#define clox_chunk_h
+#ifndef craven_chunk_h
+#define craven_chunk_h
 
 #include "common.h"
 #include "value.h"
@@ -45,6 +45,25 @@ typedef enum {
      * STACK EFFECT: +1
      */
     OP_FALSE,
+    /**
+     * Push a value corresponding to the value of ``number``.
+     * 
+     * :parameters:
+     *  * **number** -- byte operand
+     * 
+     * STACK EFFECT: +1
+     */
+    OP_INT,
+    /**
+     * Pop ``elemCount`` values off of the stack and create a list from them.
+     * Stack effect is ``1-elemCount``.
+     * 
+     * :parameters:
+     *  * **elemCount** -- byte operand
+     * 
+     * STACK EFFECT: variable (see description)
+     */
+    OP_LIST,
     /**
      * Pop a value off the top of the stack and discard. Useful for throwing away
      * values.
@@ -207,6 +226,22 @@ typedef enum {
      */
     OP_GET_SUPER,
     /**
+     * Pop one value to use as the index, then pop the opject to index into. Push
+     * the value at the index indicated, or throw an error if the object isn't
+     * indexable or index is out of bounds, or if the index isn't a valid type.
+     * 
+     * STACK EFFECT: -1
+     */
+    OP_GET_INDEX,
+    /**
+     * Pop the assigned value off the top of the stack, then the index, then the
+     * value. Try to perform assignment and push the assigned value back onto the
+     * stack. Throws an error for unindexable object or invalid indicies.
+     * 
+     * STACK EFFECT: -2
+     */
+    OP_SET_INDEX,
+    /**
      * Pop two operands and test for equality, pushing result.
      * 
      * STACK EFFECT: -1
@@ -293,6 +328,18 @@ typedef enum {
      * STACK EFFECT: 0
      */
     OP_JUMP_IF_FALSE,
+    /**
+     * Pop the index from the top, then peek at the value under it, the list to
+     * traverse. Retrieve the value at the index, then push the incremented index
+     * followed by the retrieved value. If the index is out of range, performs a
+     * jump to the specified instruction.
+     * 
+     * :parameters:
+     *  * **jumpAmount** -- byte operand
+     * 
+     * STACK EFFECT: variable (see description)
+     */
+    OP_NEXT_JUMP,
     /**
      * Same as :c:member:`OpCode.OP_JUMP`, but subtracts from the ``ip`` rather
      * than adding, useful for going back to the beginning of a loop.

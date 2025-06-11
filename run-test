@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-gcc $(find src/*.c) -o build/clox.out
+gcc $(find src/*.c) -lm -o build/craven.out
 #cd unittest
 #dart ../../craftinginterpreters/tool/bin/test.dart \
-#    clox --interpreter ../build/clox.out
+#    clox --interpreter ../build/craven.out
 python3 tool/test.py

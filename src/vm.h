@@ -1,5 +1,5 @@
-#ifndef clox_vm_h
-#define clox_vm_h
+#ifndef craven_vm_h
+#define craven_vm_h
 
 #include "object.h"
 #include "table.h"
@@ -44,7 +44,7 @@ extern VM vm;
 void initVM();
 void freeVM();
 InterpretResult interpret(const char* source);
-void push(Value value);
+bool push(Value value);
 Value pop();
 
 #endif

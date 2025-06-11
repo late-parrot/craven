@@ -1,4 +1,4 @@
 #!/usr/bin/bash
 
-gcc $(find src/*.c) -o build/clox.out
-./build/clox.out "$@"
+gcc $(find src/*.c) -lm -o build/craven.out
+./build/craven.out "$@"
