@@ -13,7 +13,7 @@ print(fac(10));
 func foo() {
     var a = 5;
     print(a);
-    func getA() {
+    func () {
         a
     }
 }

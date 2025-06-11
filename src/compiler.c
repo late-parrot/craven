@@ -203,10 +203,14 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
     compiler->function = newFunction();
     current = compiler;
     if (type != TYPE_SCRIPT) {
-        current->function->name = copyString(
-            parser.previous.start,
-            parser.previous.length
-        );
+        if (parser.previous.type == TOKEN_FUNC) {
+            current->function->name = copyString("anonymous", 9);
+        } else {
+            current->function->name = copyString(
+                parser.previous.start,
+                parser.previous.length
+            );
+        }
     }
 
     Local* local = &current->locals[current->localCount++];
@@ -728,13 +732,17 @@ static void classDeclaration() {
     currentClass = currentClass->enclosing;
 }
 
-static void funDeclaration() {
-    uint8_t global = parseVariable("Expect function name.");
-    Token funcName = parser.previous;
-    markInitialized();
-    function(TYPE_FUNCTION);
-    defineVariable(global);
-    namedVariable(funcName, false);
+static void funcDeclaration() {
+    if (check(TOKEN_IDENTIFIER)) {
+        uint8_t global = parseVariable("Expect function name.");
+        Token funcName = parser.previous;
+        markInitialized();
+        function(TYPE_FUNCTION);
+        defineVariable(global);
+        namedVariable(funcName, false);
+    } else { // Anonymous function
+        function(TYPE_FUNCTION);
+    }
 }
 
 static void varDeclaration() {
@@ -870,10 +878,20 @@ static void synchronize() {
 }
 
 static void expression() {
-    if (match(TOKEN_FOR)) {
+    if (match(TOKEN_CLASS)) {
+        classDeclaration();
+    } else if (match(TOKEN_FOR)) {
         forStatement();
+    } else if (match(TOKEN_FUNC)) {
+        funcDeclaration();
     } else if (match(TOKEN_IF)) {
         ifStatement();
+    } else if (match(TOKEN_PRINT)) {
+        printStatement();
+    } else if (match(TOKEN_RETURN)) {
+        returnStatement();
+    } else if (match(TOKEN_VAR)) {
+        varDeclaration();
     } else if (match(TOKEN_WHILE)) {
         whileStatement();
     } else if (match(TOKEN_LEFT_BRACE)) {
@@ -892,7 +910,7 @@ static void block() {
         } else if (match(TOKEN_FOR)) {
             forStatement();
         } else if (match(TOKEN_FUNC)) {
-            funDeclaration();
+            funcDeclaration();
         } else if (match(TOKEN_IF)) {
             ifStatement();
         } else if (match(TOKEN_PRINT)) {
@@ -923,7 +941,7 @@ static void statement() {
     } else if (match(TOKEN_FOR)) {
         forStatement();
     } else if (match(TOKEN_FUNC)) {
-        funDeclaration();
+        funcDeclaration();
     } else if (match(TOKEN_IF)) {
         ifStatement();
     } else if (match(TOKEN_PRINT)) {
