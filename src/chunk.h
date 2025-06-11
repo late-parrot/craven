@@ -46,6 +46,15 @@ typedef enum {
      */
     OP_FALSE,
     /**
+     * Push a value corresponding to the value of ``number``.
+     * 
+     * :parameters:
+     *  * **number** -- byte operand
+     * 
+     * STACK EFFECT: +1
+     */
+    OP_INT,
+    /**
      * Pop ``elemCount`` values off of the stack and create a list from them.
      * Stack effect is ``1-elemCount``.
      * 
@@ -319,6 +328,18 @@ typedef enum {
      * STACK EFFECT: 0
      */
     OP_JUMP_IF_FALSE,
+    /**
+     * Pop the index from the top, then peek at the value under it, the list to
+     * traverse. Retrieve the value at the index, then push the incremented index
+     * followed by the retrieved value. If the index is out of range, performs a
+     * jump to the specified instruction.
+     * 
+     * :parameters:
+     *  * **jumpAmount** -- byte operand
+     * 
+     * STACK EFFECT: variable (see description)
+     */
+    OP_NEXT_JUMP,
     /**
      * Same as :c:member:`OpCode.OP_JUMP`, but subtracts from the ``ip`` rather
      * than adding, useful for going back to the beginning of a loop.

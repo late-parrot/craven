@@ -220,6 +220,30 @@ static bool getIndex(Value object, Value index) {
     return false;
 }
 
+static bool rawGetIndex(Value object, int index) {
+    switch (OBJ_TYPE(object)) {
+        case OBJ_LIST: {
+            ObjList* list = AS_LIST(object);
+            if (index < 0 || index >= list->values.count) {
+                return false;
+            }
+            PUSH(list->values.values[index]);
+            return true;
+        }
+        case OBJ_STRING: {
+            ObjString* string = AS_STRING(object);
+            if (index < 0 || index >= string->length) {
+                return false;
+            }
+            PUSH(OBJ_VAL(copyString(&string->chars[index], 1)));
+            return true;
+        }
+        default:
+            break;
+    }
+    return false;
+}
+
 static bool setIndex(Value object, Value index, Value value) {
     switch (OBJ_TYPE(object)) {
         case OBJ_LIST: {
@@ -268,19 +292,19 @@ static bool invoke(ObjString* name, int argCount) {
             }
             return invokeFromClass(instance->klass, name, argCount);
         case OBJ_STRING:
-            runtimeError("Undefined property '%s'.", name->chars);
+            runtimeError("Undefined method '%s'.", name->chars);
             return false;
         case OBJ_LIST:
             if (strcmp(name->chars, "append") == 0) {
                 callValue(OBJ_VAL(newBoundNative(receiver, listAppendNative)), argCount);
                 return true;
             }
-            runtimeError("Undefined property '%s'.", name->chars);
+            runtimeError("Undefined method '%s'.", name->chars);
             return false;
         default:
             break;
     }
-    runtimeError("Value does not have methods.");
+    runtimeError("Value has no properties.");
     return false;
 }
 
@@ -465,6 +489,7 @@ static InterpretResult run() {
             case OP_NIL: PUSH(NIL_VAL); break;
             case OP_TRUE: PUSH(BOOL_VAL(true)); break;
             case OP_FALSE: PUSH(BOOL_VAL(false)); break;
+            case OP_INT: PUSH(NUMBER_VAL((double)READ_BYTE())); break;
             case OP_LIST: {
                 uint8_t elemCount = READ_BYTE();
                 ObjList* list = newList();
@@ -606,6 +631,19 @@ static InterpretResult run() {
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
                 if (isFalsey(peek(0))) frame->ip += offset;
+                break;
+            }
+            case OP_NEXT_JUMP: {
+                uint16_t offset = READ_SHORT();
+                int index = (int)AS_NUMBER(pop());
+                Value iter = peek(0);
+                if (!IS_OBJ(iter) || OBJ_TYPE(iter) != OBJ_LIST &&
+                    OBJ_TYPE(iter) != OBJ_STRING) {
+                    runtimeError("Can only iterate list or string.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                PUSH(NUMBER_VAL(index+1));
+                if (!rawGetIndex(iter, index)) frame->ip += offset;
                 break;
             }
             case OP_LOOP: {

@@ -121,7 +121,15 @@ static TokenType identifierType() {
                 }
             }
             break;
-        case 'i': return checkKeyword(1, 1, "f", TOKEN_IF);
+        case 'i':
+            int length;
+            if ((length = scanner.current - scanner.start) > 1) {
+                switch (scanner.start[1]) {
+                    case 'f': return length == 2 ? TOKEN_IF : TOKEN_IDENTIFIER;
+                    case 'n': return length == 2 ? TOKEN_IN : TOKEN_IDENTIFIER;
+                }
+            }
+            break; 
         case 'n':
             if (scanner.current - scanner.start > 1) {
                 switch (scanner.start[1]) {
