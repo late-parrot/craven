@@ -1,4 +1,4 @@
-macro ADD_ONE(x) = ((x)+1);
+macro ADD_ONE(x) ((x)+1)
 
 macro TEST(name, body) {
 

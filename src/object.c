@@ -144,7 +144,7 @@ static void printFunction(ObjFunction* function) {
         printf("<script>");
         return;
     }
-    printf("<fn %s>", function->name->chars);
+    printf("<func %s>", function->name->chars);
 }
 
 void printObject(Value value) {
