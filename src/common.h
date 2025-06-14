@@ -31,6 +31,7 @@
 /** Logs all activity of the GC, such as allocation, freeing, and marking. */
 #define DEBUG_LOG_GC
 
+//#undef NAN_BOXING
 #undef DEBUG_PRINT_CODE
 #undef DEBUG_TRACE_EXECUTION
 #undef DEBUG_STRESS_GC

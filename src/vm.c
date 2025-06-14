@@ -24,11 +24,8 @@ static void resetStack() {
     vm.openUpvalues = NULL;
 }
 
-static void runtimeError(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
+static void errorV(const char* format, va_list args) {
     vfprintf(stderr, format, args);
-    va_end(args);
     fputs("\n", stderr);
 
     for (int i = vm.frameCount - 1; i >= 0; i--) {
@@ -44,6 +41,24 @@ static void runtimeError(const char* format, ...) {
     }
 
     resetStack();
+}
+
+static void runtimeError(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    errorV(format, args);
+    va_end(args);
+    fputs("\n", stderr);
+}
+
+void fatalError(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    errorV(format, args);
+    va_end(args);
+    fputs("\n", stderr);
+
+    vm.kill = true; // Kills after current instruction, best I can do for now
 }
 
 static bool clockNative(int argCount, Value* args) {
@@ -63,9 +78,13 @@ static bool listAppendNative(int argCount, Value* args) {
 }
 
 static bool defineNative(const char* name, NativeFn function) {
+    ObjString *s = copyString(name, (int)strlen(name));
     PUSH(OBJ_VAL(copyString(name, (int)strlen(name))));
     PUSH(OBJ_VAL(newNative(function)));
-    tableSet(&vm.globals, AS_STRING(vm.stack[0]), vm.stack[1]);
+    Value nameDB = vm.stack[0];
+    Value funcDB = vm.stack[1];
+    ObjString* nativeNameDB = AS_STRING(vm.stack[0]);
+    tableSet(&vm.globals, vm.stack[0], vm.stack[1]);
     pop();
     pop();
     return true;
@@ -76,6 +95,7 @@ void initVM() {
     vm.objects = NULL;
     vm.bytesAllocated = 0;
     vm.nextGC = 1024 * 1024;
+    vm.kill = false;
 
     int grayCount;
     int grayCapacity;
@@ -86,7 +106,7 @@ void initVM() {
 
     vm.initString = NULL;
     vm.initString = copyString("init", 4);
-    // NOTE: Couldn't technically overflow the stack, so no need to handle overflow.
+    // Couldn't technically overflow the stack, so no need to handle overflow.
     defineNative("clock", clockNative);
 }
 
@@ -157,7 +177,7 @@ static bool callValue(Value callee, int argCount) {
                 ObjClass* klass = AS_CLASS(callee);
                 vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
                 Value initializer;
-                if (tableGet(&klass->methods, vm.initString, &initializer)) {
+                if (tableGet(&klass->methods, OBJ_VAL(vm.initString), &initializer)) {
                     return call(AS_CLOSURE(initializer), argCount);
                 } else if (argCount != 0) {
                     runtimeError("Expected 0 arguments but got %d.", argCount);
@@ -273,7 +293,7 @@ static bool setIndex(Value object, Value index, Value value) {
 
 static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount) {
     Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
+    if (!tableGet(&klass->methods, OBJ_VAL(name), &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
@@ -286,7 +306,7 @@ static bool invoke(ObjString* name, int argCount) {
         case OBJ_INSTANCE:
             ObjInstance* instance = AS_INSTANCE(receiver);
             Value value;
-            if (tableGet(&instance->fields, name, &value)) {
+            if (tableGet(&instance->fields, OBJ_VAL(name), &value)) {
                 vm.stackTop[-argCount - 1] = value;
                 return callValue(value, argCount);
             }
@@ -310,7 +330,7 @@ static bool invoke(ObjString* name, int argCount) {
 
 static bool bindMethod(ObjClass* klass, ObjString* name) {
     Value method;
-    if (!tableGet(&klass->methods, name, &method)) {
+    if (!tableGet(&klass->methods, OBJ_VAL(name), &method)) {
         runtimeError("Undefined property '%s'.", name->chars);
         return false;
     }
@@ -327,7 +347,7 @@ static bool getProperty(Value obj, ObjString* name) {
             ObjInstance* instance = AS_INSTANCE(obj);
 
             Value property;
-            if (tableGet(&instance->fields, name, &property)) {
+            if (tableGet(&instance->fields, OBJ_VAL(name), &property)) {
                 pop();
                 PUSH(property);
                 return true;
@@ -370,7 +390,7 @@ static bool setProperty(Value obj, ObjString* name, Value value) {
         case OBJ_INSTANCE:
             ObjInstance* instance = AS_INSTANCE(obj);
             Value property;
-            tableSet(&instance->fields, name, value);
+            tableSet(&instance->fields, OBJ_VAL(name), value);
             pop(); // Value
             pop(); // Object
             PUSH(value);
@@ -418,7 +438,7 @@ static void closeUpvalues(Value* last) {
 static void defineMethod(ObjString* name) {
     Value method = peek(0);
     ObjClass* klass = AS_CLASS(peek(1));
-    tableSet(&klass->methods, name, method);
+    tableSet(&klass->methods, OBJ_VAL(name), method);
     pop();
 }
 
@@ -513,7 +533,7 @@ static InterpretResult run() {
             case OP_GET_GLOBAL: {
                 ObjString* name = READ_STRING();
                 Value value;
-                if (!tableGet(&vm.globals, name, &value)) {
+                if (!tableGet(&vm.globals, OBJ_VAL(name), &value)) {
                     runtimeError("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -522,13 +542,13 @@ static InterpretResult run() {
             }
             case OP_DEFINE_GLOBAL: {
                 ObjString* name = READ_STRING();
-                tableSet(&vm.globals, name, pop());
+                tableSet(&vm.globals, OBJ_VAL(name), pop());
                 break;
             }
             case OP_SET_GLOBAL: {
                 ObjString* name = READ_STRING();
-                if (tableSet(&vm.globals, name, peek(0))) {
-                    tableDelete(&vm.globals, name);
+                if (tableSet(&vm.globals, OBJ_VAL(name), peek(0))) {
+                    tableDelete(&vm.globals, OBJ_VAL(name));
                     runtimeError("Undefined variable '%s'.", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
@@ -729,6 +749,7 @@ static InterpretResult run() {
                 defineMethod(READ_STRING());
                 break;
         }
+        if (vm.kill) return INTERPRET_RUNTIME_ERROR;
     }
 
 #undef READ_BYTE

@@ -93,7 +93,7 @@ static ObjString* allocateString(char* chars, int length, uint32_t hash) {
     string->hash = hash;
 
     push(OBJ_VAL(string));
-    tableSet(&vm.strings, string, NIL_VAL);
+    tableSet(&vm.strings, OBJ_VAL(string), NIL_VAL);
     pop();
 
     return string;
@@ -128,7 +128,8 @@ ObjString* copyString(const char* chars, int length) {
     char* heapChars = ALLOCATE(char, length + 1);
     memcpy(heapChars, chars, length);
     heapChars[length] = '\0';
-    return allocateString(heapChars, length, hash);
+    ObjString* debug = allocateString(heapChars, length, hash);
+    return debug; //allocateString(heapChars, length, hash);
 }
 
 ObjUpvalue* newUpvalue(Value* slot) {

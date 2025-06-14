@@ -31,6 +31,8 @@ typedef struct {
     int grayCount;
     int grayCapacity;
     Obj** grayStack;
+
+    bool kill;
 } VM;
 
 typedef enum {
@@ -46,5 +48,6 @@ void freeVM();
 InterpretResult interpret(const char* source);
 bool push(Value value);
 Value pop();
+void fatalError(const char* message, ...);
 
 #endif

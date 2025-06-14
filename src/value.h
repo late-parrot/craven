@@ -43,6 +43,11 @@ typedef struct ObjString ObjString;
 #define TAG_TRUE  3 // 11.
 
 /**
+ * A flag for NaN boxed empty values, mostly used for indication.
+ */
+#define TAG_EMPTY 3 // 100.
+
+/**
  * With the NaN boxing representation, all values are 64 bit integers, which
  * actually represent double-precision floats. If all of the exponent bits are set,
  * the value is treated as a NaN value, and we can for the most part stuff whatever
@@ -64,6 +69,9 @@ typedef uint64_t Value;
 
 /** Check if a NaN boxed value is an :c:expr:`Obj*`. */
 #define IS_OBJ(value)       (((value) & (QNAN | SIGN_BIT)) == (QNAN | SIGN_BIT))
+
+/** Check if a NaN boxed value is an empty value. */
+#define IS_EMPTY(value)     ((value) == EMPTY_VAL)
 
 /**
  * Convert a NaN boxed value to a C boolean.
@@ -123,6 +131,9 @@ typedef uint64_t Value;
 /** Convert a C :c:expr:`Obj*` into a NaN boxed value. */
 #define OBJ_VAL(obj)    (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
+/** All empty values are the same thing: this value. */
+#define EMPTY_VAL       ((Value)(uint64_t)(QNAN | TAG_EMPTY))
+
 static inline double valueToNum(Value value) {
     double num;
     memcpy(&num, &value, sizeof(Value));
@@ -142,6 +153,7 @@ typedef enum {
     VAL_NIL, 
     VAL_NUMBER,
     VAL_OBJ,
+    VAL_EMPTY
 } ValueType;
 
 typedef struct {
@@ -157,6 +169,7 @@ typedef struct {
 #define IS_NIL(value)     ((value).type == VAL_NIL)
 #define IS_NUMBER(value)  ((value).type == VAL_NUMBER)
 #define IS_OBJ(value)     ((value).type == VAL_OBJ)
+#define IS_EMPTY(value)   ((value).type == VAL_EMPTY)
 
 #define AS_OBJ(value)     ((value).as.obj)
 #define AS_BOOL(value)    ((value).as.boolean)
@@ -166,6 +179,7 @@ typedef struct {
 #define NIL_VAL           ((Value){VAL_NIL, {.number = 0}})
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
 #define OBJ_VAL(object)   ((Value){VAL_OBJ, {.obj = (Obj*)object}})
+#define EMPTY_VAL         ((Value){VAL_EMPTY, {.number = 0}})
 
 #endif
 

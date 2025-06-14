@@ -36,6 +36,8 @@ void printValue(Value value) {
         printf("%g", AS_NUMBER(value));
     } else if (IS_OBJ(value)) {
         printObject(value);
+    } else if (IS_EMPTY(value)) {
+        printf("<empty value>");
     }
 #else
     switch (value.type) {
@@ -45,6 +47,7 @@ void printValue(Value value) {
         case VAL_NIL: printf("nil"); break;
         case VAL_NUMBER: printf("%g", AS_NUMBER(value)); break;
         case VAL_OBJ: printObject(value); break;
+        case VAL_EMPTY: printf("<empty value>"); break;
     }
 #endif
 }
@@ -62,6 +65,7 @@ bool valuesEqual(Value a, Value b) {
         case VAL_NIL:    return true;
         case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
         case VAL_OBJ:    return AS_OBJ(a) == AS_OBJ(b);
+        case VAL_EMPTY:  return true;
         default:         return false; // Unreachable.
     }
 #endif
