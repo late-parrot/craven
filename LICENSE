@@ -1,3 +1,58 @@
+Copyright (c) 2025 Eric Schuette
+Portions copyright (c) 2015 Robert Nystrom
+
+-------------------------------- Comentary -------------------------------------
+
+The licensing for this project is a little bit confusing, so I'd like to explain
+it a bit here. I started CRaven with little knowledge of how to create a virtual
+machine, and I used Robert Nystrom's wonderful book -- Crafting Interpreters.
+Seriously, if you haven't read it already, it's beautifully written and helped
+me a lot with this project. I followed along with his book and found myself with
+a complete implementation of his Lox language. I wanted to extend it and create
+my own language using Lox as a starting point, so I did, and that's what CRaven
+is. Lox is licensed under the MIT license, so any of the original code from the
+book is licensed under that, and anything I modified myself is under the Apache
+2.0 license, which is included at the end of this file.
+
+You can find Robert's book at https://craftinginterpreters.com or the GitHub
+page at https://github.com/munificent/craftinginterpreters. The original
+license for the Lox language is at
+https://github.com/munificent/craftinginterpreters/blob/master/LICENSE.
+
+
+-------------------------------- License(s) ------------------------------------
+
+The MIT License requires that a copyright and permission notice are included in
+any redistrobutions of the project, so this can be found below. This only covers
+the code that was originally written by Robert as part of his book, and anything
+written by me is under Apache 2.0.
+
+    Copyright (c) 2015 Robert Nystrom
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to
+    deal in the Software without restriction, including without limitation the
+    rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+    sell copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+    IN THE SOFTWARE.
+
+
+
+Remember, this only covers code originally from the Lox language, and any code
+written by me for this project is under the following license.
+
+
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
