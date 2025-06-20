@@ -77,6 +77,12 @@ ObjClosure* newClosure(ObjFunction* function) {
     return closure;
 }
 
+ObjDict* newDict() {
+    ObjDict* dict = ALLOCATE_OBJ(ObjDict, OBJ_DICT);
+    initTable(&dict->values);
+    return dict;
+}
+
 ObjFunction* newFunction() {
     ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
     function->arity = 0;
@@ -187,7 +193,7 @@ void printObject(Value value) {
         case OBJ_INSTANCE:
             printf("%s instance", AS_INSTANCE(value)->klass->name->chars);
             break;
-        case OBJ_LIST:
+        case OBJ_LIST: {
             ObjList* list = AS_LIST(value);
             printf("[");
             for (Value* v = list->values.values;
@@ -198,6 +204,28 @@ void printObject(Value value) {
             }
             printf("]");
             break;
+        }
+        case OBJ_DICT: {
+            ObjDict* dict = AS_DICT(value);
+            Entry previous = {EMPTY_VAL, NIL_VAL};
+            printf("dict {");
+            for (Entry* e = dict->values.entries;
+                e - dict->values.entries < dict->values.capacity; e++) {
+                if (IS_EMPTY(e->key)) continue;
+                if (!IS_EMPTY(previous.key)) {
+                    printValue(previous.key);
+                    printf(" => ");
+                    printValue(previous.value);
+                    printf(", ");
+                }
+                previous = *e;
+            }
+            printValue(previous.key);
+            printf(" => ");
+            printValue(previous.value);
+            printf("}");
+            break;
+        }
         case OBJ_NATIVE:
             printf("<native fn>");
             break;

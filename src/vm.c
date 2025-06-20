@@ -224,6 +224,16 @@ static bool callValue(Value callee, int argCount) {
 
 static bool getIndex(Value object, Value index) {
     switch (OBJ_TYPE(object)) {
+        case OBJ_DICT: {
+            ObjDict* dict = AS_DICT(object);
+            Value value;
+            if (!tableGet(&dict->values, index, &value)) {
+                runtimeError("Dict key not present.");
+                return false;
+            }
+            PUSH(value);
+            return true;
+        }
         case OBJ_LIST: {
             ObjList* list = AS_LIST(object);
             double idx;
@@ -261,6 +271,15 @@ static bool getIndex(Value object, Value index) {
 
 static bool rawGetIndex(Value object, int index) {
     switch (OBJ_TYPE(object)) {
+        case OBJ_DICT: {
+            /* 
+             * This method doesn't make any sense for dictionaries,
+             * because they don't store values in certain indecies.
+             * This method is primarily used for for loops, and those
+             * are implemented differently for dicts.
+             */
+            break;
+        }
         case OBJ_LIST: {
             ObjList* list = AS_LIST(object);
             if (index < 0 || index >= list->values.count) {
@@ -285,6 +304,12 @@ static bool rawGetIndex(Value object, int index) {
 
 static bool setIndex(Value object, Value index, Value value) {
     switch (OBJ_TYPE(object)) {
+        case OBJ_DICT: {
+            ObjDict* dict = AS_DICT(object);
+            tableSet(&dict->values, index, value);
+            PUSH(value);
+            return true;
+        }
         case OBJ_LIST: {
             ObjList* list = AS_LIST(object);
             double idx;
@@ -536,6 +561,15 @@ static InterpretResult run() {
                     writeValueArray(&list->values, *v);
                 vm.stackTop -= elemCount;
                 PUSH(OBJ_VAL(list));
+                break;
+            }
+            case OP_DICT: {
+                uint16_t entryCount = READ_BYTE();
+                ObjDict* dict = newDict();
+                for (Value* v = vm.stackTop - 2*entryCount; v < vm.stackTop; v += 2)
+                    tableSet(&dict->values, *v, *(v+1));
+                vm.stackTop -= 2*entryCount;
+                PUSH(OBJ_VAL(dict));
                 break;
             }
             case OP_POP: pop(); break;

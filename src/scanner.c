@@ -228,7 +228,8 @@ Token scanToken() {
                 match('=') ? TOKEN_BANG_EQUAL : TOKEN_NOT);
         case '=':
             return makeToken(
-                match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+                match('=') ? TOKEN_EQUAL_EQUAL :
+                match('>') ? TOKEN_FAT_ARROW : TOKEN_EQUAL);
         case '<':
             return makeToken(
                 match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);

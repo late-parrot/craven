@@ -75,7 +75,7 @@ typedef enum {
     OP_INT,
     /**
      * Pop ``elemCount`` values off of the stack and create a list from them.
-     * Stack effect is ``1-elemCount``.
+     * Stack effect is ``1 - elemCount``.
      * 
      * :parameters:
      *  * **elemCount** -- byte operand
@@ -83,6 +83,17 @@ typedef enum {
      * STACK EFFECT: variable (see description)
      */
     OP_LIST,
+    /**
+     * Pop ``2 * entryCount`` values off of the stack in pairs, and treat each
+     * pair as a key and value (key comes first on stack), pushing the created
+     * dict onto the stack. Stack effect is ``1 - 2 * entryCount``.
+     * 
+     * :parameters:
+     *  * **entryCount** -- byte operand
+     * 
+     * STACK EFFECT: variable (see description)
+     */
+    OP_DICT,
     /**
      * Pop a value off the top of the stack and discard. Useful for throwing away
      * values.

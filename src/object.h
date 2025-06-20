@@ -40,6 +40,9 @@ for more information.
 /** Check to see if the value is an :c:struct:`ObjClosure`. */
 #define IS_CLOSURE(value)      isObjType(value, OBJ_CLOSURE)
 
+/** Check to see if the value is an :c:struct:`ObjDict`. */
+#define IS_DICT(value)         isObjType(value, OBJ_DICT)
+
 /** Check to see if the value is an :c:struct:`ObjFunction`. */
 #define IS_FUNCTION(value)     isObjType(value, OBJ_FUNCTION)
 
@@ -106,6 +109,19 @@ for more information.
  *     a *really* good reason.
  */
 #define AS_CLOSURE(value)      ((ObjClosure*)AS_OBJ(value))
+
+/**
+ * Cast the value to an :c:expr:`ObjDict*`.
+ * 
+ * .. warning::
+ *     Converting :c:expr:`Value` s to C objects is unsafe and must be guarded
+ *     with one of the ``IS_`` macros. Otherwise, the ``AS_`` macros could
+ *     reinterpret random bits of memory, causing segfaults or UB.
+ * 
+ *     Always, *always* guard ``AS_`` macros with ``IS_`` macros, unless you have
+ *     a *really* good reason.
+ */
+#define AS_DICT(value)         ((ObjDict*)AS_OBJ(value))
 
 /**
  * Cast the value to an :c:expr:`ObjFunction*`.
@@ -191,6 +207,7 @@ typedef enum {
     OBJ_BOUND_NATIVE,
     OBJ_CLASS,
     OBJ_CLOSURE,
+    OBJ_DICT,
     OBJ_FUNCTION,
     OBJ_INSTANCE,
     OBJ_LIST,
@@ -407,6 +424,22 @@ typedef struct {
     ValueArray values;
 } ObjList;
 
+/**
+ * A simple wrapper over a :c:struct:`Table`, allowing the user
+ * to interact with hash maps.
+ */
+typedef struct {
+    /**
+     * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
+     * :c:expr:`Obj*`.
+     */
+    Obj obj;
+    /**
+     * The hash map containing all of the keys and values.
+     */
+    Table values;
+} ObjDict;
+
 typedef struct {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
@@ -421,6 +454,7 @@ ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method);
 ObjBoundNative* newBoundNative(Value receiver, NativeFn method);
 ObjClass* newClass(ObjString* name);
 ObjClosure* newClosure(ObjFunction* function);
+ObjDict* newDict();
 ObjFunction* newFunction();
 ObjInstance* newInstance(ObjClass* klass);
 ObjList* newList();

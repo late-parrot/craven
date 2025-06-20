@@ -89,6 +89,8 @@ int disassembleInstruction(Chunk* chunk, int offset) {
             return byteInstruction("OP_INT", chunk, offset);
         case OP_LIST:
             return byteInstruction("OP_LIST", chunk, offset);
+        case OP_DICT:
+            return byteInstruction("OP_DICT", chunk, offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
         case OP_GET_LOCAL:
