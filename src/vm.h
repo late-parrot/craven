@@ -20,6 +20,7 @@ for more information.
 #ifndef craven_vm_h
 #define craven_vm_h
 
+#include "builtins.h"
 #include "object.h"
 #include "table.h"
 #include "value.h"
@@ -41,6 +42,7 @@ typedef struct {
     Value* stackTop;
     Table globals;
     Table strings;
+    Builtins builtins;
     ObjString* initString;
     ObjUpvalue* openUpvalues;
 
@@ -67,6 +69,7 @@ void freeVM();
 InterpretResult interpret(const char* source);
 bool push(Value value);
 Value pop();
+void runtimeError(const char* message, ...);
 void fatalError(const char* message, ...);
 
 #endif

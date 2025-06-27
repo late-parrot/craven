@@ -2,7 +2,7 @@ var hello = "world";
 print hello[0];
 print hello[1];
 print hello[0];
-print hello.length;
+print hello.length();
 
 var x = [1, 2, 3];
 print x;

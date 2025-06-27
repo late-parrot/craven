@@ -19,6 +19,7 @@ for more information.
 
 #include <stdlib.h>
 
+#include "builtins.h"
 #include "compiler.h"
 #include "memory.h"
 #include "vm.h"
@@ -206,6 +207,7 @@ static void markRoots() {
     }
 
     markTable(&vm.globals);
+    markBuiltins(&vm.builtins);
     markCompilerRoots();
     markObject((Obj*)vm.initString);
 }

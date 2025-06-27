@@ -62,7 +62,7 @@ static void errorV(const char* format, va_list args) {
     resetStack();
 }
 
-static void runtimeError(const char* format, ...) {
+void runtimeError(const char* format, ...) {
     va_list args;
     va_start(args, format);
     errorV(format, args);
@@ -84,16 +84,6 @@ static bool clockNative(int argCount, Value* args) {
     PUSH(NUMBER_VAL((double)clock() / CLOCKS_PER_SEC));
     if (argCount != 0) runtimeError("0 args expected but got %d.", argCount);
     return argCount == 0;
-}
-
-static bool listAppendNative(int argCount, Value* args) {
-    if (argCount != 1) {
-        runtimeError("1 arg expected but got %d.", argCount);
-        return false;
-    }
-    writeValueArray(&AS_LIST(args[-1])->values, args[0]);
-    PUSH(args[0]);
-    return true;
 }
 
 static bool defineNative(const char* name, NativeFn function) {
@@ -122,16 +112,19 @@ void initVM() {
 
     initTable(&vm.globals);
     initTable(&vm.strings);
+    initBuiltins(&vm.builtins);
 
     vm.initString = NULL;
     vm.initString = copyString("init", 4);
     // Couldn't technically overflow the stack, so no need to handle overflow.
     defineNative("clock", clockNative);
+    createBuiltins(&vm.builtins);
 }
 
 void freeVM() {
     freeTable(&vm.globals);
     freeTable(&vm.strings);
+    freeBuiltins(&vm.builtins);
     freeObjects();
 }
 
@@ -347,7 +340,7 @@ static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount) {
 static bool invoke(ObjString* name, int argCount) {
     Value receiver = peek(argCount);
     switch (OBJ_TYPE(receiver)) {
-        case OBJ_INSTANCE:
+        case OBJ_INSTANCE: {
             ObjInstance* instance = AS_INSTANCE(receiver);
             Value value;
             if (tableGet(&instance->fields, OBJ_VAL(name), &value)) {
@@ -355,16 +348,40 @@ static bool invoke(ObjString* name, int argCount) {
                 return callValue(value, argCount);
             }
             return invokeFromClass(instance->klass, name, argCount);
-        case OBJ_STRING:
-            runtimeError("Undefined method '%s'.", name->chars);
-            return false;
-        case OBJ_LIST:
-            if (strcmp(name->chars, "append") == 0) {
-                callValue(OBJ_VAL(newBoundNative(receiver, listAppendNative)), argCount);
-                return true;
+        }
+        case OBJ_STRING: {
+            Value method;
+            if (tableGet(&vm.builtins.stringMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    callValue(OBJ_VAL(newBoundNative(receiver, AS_NATIVE(method))), argCount);
+                    return true;
+                }
             }
             runtimeError("Undefined method '%s'.", name->chars);
             return false;
+        }
+        case OBJ_LIST: {
+            Value method;
+            if (tableGet(&vm.builtins.listMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    callValue(OBJ_VAL(newBoundNative(receiver, AS_NATIVE(method))), argCount);
+                    return true;
+                }
+            }
+            runtimeError("Undefined method '%s'.", name->chars);
+            return false;
+        }
+        case OBJ_DICT: {
+            Value method;
+            if (tableGet(&vm.builtins.dictMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    callValue(OBJ_VAL(newBoundNative(receiver, AS_NATIVE(method))), argCount);
+                    return true;
+                }
+            }
+            runtimeError("Undefined method '%s'.", name->chars);
+            return false;
+        }
         default:
             break;
     }
@@ -387,7 +404,7 @@ static bool bindMethod(ObjClass* klass, ObjString* name) {
 
 static bool getProperty(Value obj, ObjString* name) {
     if (IS_OBJ(obj)) switch (OBJ_TYPE(obj)) {
-        case OBJ_INSTANCE:
+        case OBJ_INSTANCE: {
             ObjInstance* instance = AS_INSTANCE(obj);
 
             Value property;
@@ -401,27 +418,40 @@ static bool getProperty(Value obj, ObjString* name) {
                 return false;
             }
             return true;
-        case OBJ_STRING:
-            if (strcmp(name->chars, "length") == 0) {
-                pop();
-                PUSH(NUMBER_VAL(AS_STRING(obj)->length));
-                return true;
+        }
+        case OBJ_STRING: {
+            Value method;
+            if (tableGet(&vm.builtins.stringMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    PUSH(OBJ_VAL(newBoundNative(obj, AS_NATIVE(method))));
+                    return true;
+                }
             }
             runtimeError("Undefined property '%s'.", name->chars);
             return false;
-        case OBJ_LIST:
-            if (strcmp(name->chars, "length") == 0) {
-                pop();
-                PUSH(NUMBER_VAL(AS_LIST(obj)->values.count));
-                return true;
-            }
-            if (strcmp(name->chars, "append") == 0) {
-                pop();
-                PUSH(OBJ_VAL(newBoundNative(obj, listAppendNative)));
-                return true;
+        }
+        case OBJ_LIST: {
+            Value method;
+            if (tableGet(&vm.builtins.listMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    PUSH(OBJ_VAL(newBoundNative(obj, AS_NATIVE(method))));
+                    return true;
+                }
             }
             runtimeError("Undefined property '%s'.", name->chars);
             return false;
+        }
+        case OBJ_DICT: {
+            Value method;
+            if (tableGet(&vm.builtins.dictMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    PUSH(OBJ_VAL(newBoundNative(obj, AS_NATIVE(method))));
+                    return true;
+                }
+            }
+            runtimeError("Undefined property '%s'.", name->chars);
+            return false;
+        }
         default:
             break;
     }
