@@ -24,7 +24,7 @@ for more information.
 #include "object.h"
 #include "table.h"
 #include "value.h"
-#include "vm.h"
+#include "vm_utils.h"
 
 #define TABLE_MAX_LOAD 0.75
 
@@ -34,25 +34,25 @@ void initTable(Table* table) {
     table->entries = NULL;
 }
 
-void freeTable(Table* table) {
+void freeTable(VM* vm, Table* table) {
     FREE_ARRAY(Entry, table->entries, table->capacity);
     initTable(table);
 }
 
-static uint32_t hashValue(Value value) {
+static uint32_t hashValue(VM* vm, Value value) {
     if (IS_NIL(value) || IS_EMPTY(value)) return 0;
     else if (IS_BOOL(value)) return AS_BOOL(value);
     else if (IS_NUMBER(value)) return AS_NUMBER(value);
     else if (IS_OBJ(value)) switch (OBJ_TYPE(value)) {
         case OBJ_STRING: return AS_STRING(value)->hash;
         default:
-            fatalError("Unhashable type.");
+            fatalError(vm, "Unhashable type.");
             return 0;
     }
 }
 
-static Entry* findEntry(Entry* entries, int capacity, Value key) {
-    uint32_t index = hashValue(key) & (capacity - 1);
+static Entry* findEntry(VM* vm, Entry* entries, int capacity, Value key) {
+    uint32_t index = hashValue(vm, key) & (capacity - 1);
     Entry* tombstone = NULL;
     for (;;) {
         Entry* entry = &entries[index];
@@ -69,17 +69,17 @@ static Entry* findEntry(Entry* entries, int capacity, Value key) {
     }
 }
 
-bool tableGet(Table* table, Value key, Value* value) {
+bool tableGet(VM* vm, Table* table, Value key, Value* value) {
     if (table->count == 0) return false;
 
-    Entry* entry = findEntry(table->entries, table->capacity, key);
+    Entry* entry = findEntry(vm, table->entries, table->capacity, key);
     if (IS_EMPTY(entry->key)) return false;
 
     *value = entry->value;
     return true;
 }
 
-static void adjustCapacity(Table* table, int capacity) {
+static void adjustCapacity(VM* vm, Table* table, int capacity) {
     Entry* entries = ALLOCATE(Entry, capacity);
     for (int i = 0; i < capacity; i++) {
         entries[i].key = EMPTY_VAL;
@@ -91,7 +91,7 @@ static void adjustCapacity(Table* table, int capacity) {
         Entry* entry = &table->entries[i];
         if (IS_EMPTY(entry->key)) continue;
 
-        Entry* dest = findEntry(entries, capacity, entry->key);
+        Entry* dest = findEntry(vm, entries, capacity, entry->key);
         dest->key = entry->key;
         dest->value = entry->value;
         table->count++;
@@ -101,13 +101,13 @@ static void adjustCapacity(Table* table, int capacity) {
     table->capacity = capacity;
 }
 
-bool tableSet(Table* table, Value key, Value value) {
+bool tableSet(VM* vm, Table* table, Value key, Value value) {
     if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
         int capacity = GROW_CAPACITY(table->capacity);
-        adjustCapacity(table, capacity);
+        adjustCapacity(vm, table, capacity);
     }
 
-    Entry* entry = findEntry(table->entries, table->capacity, key);
+    Entry* entry = findEntry(vm, table->entries, table->capacity, key);
     bool isNewKey = IS_EMPTY(entry->key);
     if (isNewKey && IS_NIL(entry->value)) table->count++;
 
@@ -116,10 +116,10 @@ bool tableSet(Table* table, Value key, Value value) {
     return isNewKey;
 }
 
-bool tableDelete(Table* table, Value key) {
+bool tableDelete(VM* vm, Table* table, Value key) {
     if (table->count == 0) return false;
 
-    Entry* entry = findEntry(table->entries, table->capacity, key);
+    Entry* entry = findEntry(vm, table->entries, table->capacity, key);
     if (IS_EMPTY(entry->key)) return false;
 
     // Place a tombstone in the entry.
@@ -130,11 +130,11 @@ bool tableDelete(Table* table, Value key) {
     return true;
 }
 
-void tableAddAll(Table* from, Table* to) {
+void tableAddAll(VM* vm, Table* from, Table* to) {
     for (int i = 0; i < from->capacity; i++) {
         Entry* entry = &from->entries[i];
         if (!IS_EMPTY(entry->key)) {
-            tableSet(to, entry->key, entry->value);
+            tableSet(vm, to, entry->key, entry->value);
         }
     }
 }
@@ -160,20 +160,20 @@ ObjString* tableFindString(Table* table, const char* chars,
     }
 }
 
-void tableRemoveWhite(Table* table) {
+void tableRemoveWhite(VM* vm, Table* table) {
     for (int i = 0; i < table->capacity; i++) {
         Entry* entry = &table->entries[i];
         if (!IS_EMPTY(entry->key) && IS_OBJ(entry->key) &&
             !AS_OBJ(entry->key)->isMarked) {
-            tableDelete(table, entry->key);
+            tableDelete(vm, table, entry->key);
         }
     }
 }
 
-void markTable(Table* table) {
+void markTable(VM* vm, Table* table) {
     for (int i = 0; i < table->capacity; i++) {
         Entry* entry = &table->entries[i];
-        markValue(entry->key);
-        markValue(entry->value);
+        markValue(vm, entry->key);
+        markValue(vm, entry->value);
     }
 }

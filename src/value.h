@@ -23,9 +23,12 @@ for more information.
 #include <string.h>
 
 #include "common.h"
+#include "vm_utils.h"
 
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
+typedef struct ObjClosure ObjClosure;
+typedef struct ObjUpvalue ObjUpvalue;
 
 #ifdef NAN_BOXING
 
@@ -246,7 +249,7 @@ void initValueArray(ValueArray* array);
  * :param array: A pointer to the array to write to
  * :param value: The value to write to the array
  */
-void writeValueArray(ValueArray* array, Value value);
+void writeValueArray(VM* vm, ValueArray* array, Value value);
 
 /**
  * Free the memory for a :c:struct:`ValueArray`, but not any of the values in it.
@@ -255,7 +258,7 @@ void writeValueArray(ValueArray* array, Value value);
  * 
  * :param array: A pointer to the array to free
  */
-void freeValueArray(ValueArray* array);
+void freeValueArray(VM* vm, ValueArray* array);
 
 /**
  * Print a value to stdout, without any extra formatting.

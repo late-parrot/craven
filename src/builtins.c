@@ -17,37 +17,49 @@ See LICENSE (https://github.com/late-parrot/craven/blob/main/LICENSE)
 for more information.
 */
 
+#include <time.h>
+
 #include "builtins.h"
 #include "object.h"
-#include "vm.h"
+#include "value.h"
+#include "vm_utils.h"
 
 #define PUSH(value) \
     do { \
-        if (!push(value)) return false; \
+        if (!push(vm, value)) return false; \
     } while (false)
+
+#define POP() pop(vm)
+
+#define PEEK(amount) peek(vm, amount)
 
 #define CHECK_ARGCOUNT(expected) \
     do { \
         if (argCount != expected) { \
-            runtimeError("%d args expected but got %d.", expected, argCount); \
+            runtimeError(vm, "%d args expected but got %d.", expected, argCount); \
             return false; \
         } \
     } while (false)
 
-static bool stringLengthNative(int argCount, Value* args) {
+static bool clockNative(VM* vm, int argCount, Value* args) {
+    CHECK_ARGCOUNT(0);
+    PUSH(NUMBER_VAL((double)clock() / CLOCKS_PER_SEC));
+}
+
+static bool stringLengthNative(VM* vm, int argCount, Value* args) {
     CHECK_ARGCOUNT(0);
     PUSH(NUMBER_VAL(AS_STRING(args[-1])->length));
     return true;
 }
 
-static bool listAppendNative(int argCount, Value* args) {
+static bool listAppendNative(VM* vm, int argCount, Value* args) {
     CHECK_ARGCOUNT(1);
-    writeValueArray(&AS_LIST(args[-1])->values, args[0]);
+    writeValueArray(vm, &AS_LIST(args[-1])->values, args[0]);
     PUSH(args[0]);
     return true;
 }
 
-static bool listLengthNative(int argCount, Value* args) {
+static bool listLengthNative(VM* vm, int argCount, Value* args) {
     CHECK_ARGCOUNT(0);
     PUSH(NUMBER_VAL(AS_LIST(args[-1])->values.count));
     return true;
@@ -59,29 +71,31 @@ void initBuiltins(Builtins* builtins) {
     initTable(&builtins->dictMembers);
 }
 
-static void addBuiltin(Table* table, const char* name, NativeFn native) {
-    tableSet(
+static void addBuiltin(VM* vm, Table* table, const char* name, NativeFn native) {
+    tableSet(vm,
         table,
-        OBJ_VAL(copyString(name, strlen(name))),
-        OBJ_VAL(newNative(native))
+        OBJ_VAL(copyString(vm, name, strlen(name))),
+        OBJ_VAL(newNative(vm, native))
     );
 }
 
-void createBuiltins(Builtins* builtins) {
-    addBuiltin(&builtins->stringMembers, "length", stringLengthNative);
+void createBuiltins(VM* vm, Builtins* builtins) {
+    defineNative(vm, "clock", clockNative);
 
-    addBuiltin(&builtins->listMembers, "append", listAppendNative);
-    addBuiltin(&builtins->listMembers, "length", listLengthNative);
+    addBuiltin(vm, &builtins->stringMembers, "length", stringLengthNative);
+
+    addBuiltin(vm, &builtins->listMembers, "append", listAppendNative);
+    addBuiltin(vm, &builtins->listMembers, "length", listLengthNative);
 }
 
-void markBuiltins(Builtins* builtins) {
-    markTable(&builtins->stringMembers);
-    markTable(&builtins->listMembers);
-    markTable(&builtins->dictMembers);
+void markBuiltins(VM* vm, Builtins* builtins) {
+    markTable(vm, &builtins->stringMembers);
+    markTable(vm, &builtins->listMembers);
+    markTable(vm, &builtins->dictMembers);
 }
 
-void freeBuiltins(Builtins* builtins) {
-    freeTable(&builtins->stringMembers);
-    freeTable(&builtins->listMembers);
-    freeTable(&builtins->dictMembers);
+void freeBuiltins(VM* vm, Builtins* builtins) {
+    freeTable(vm, &builtins->stringMembers);
+    freeTable(vm, &builtins->listMembers);
+    freeTable(vm, &builtins->dictMembers);
 }

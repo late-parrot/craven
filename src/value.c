@@ -23,6 +23,7 @@ for more information.
 #include "object.h"
 #include "memory.h"
 #include "value.h"
+#include "vm.h"
 
 void initValueArray(ValueArray* array) {
     array->values = NULL;
@@ -30,7 +31,7 @@ void initValueArray(ValueArray* array) {
     array->count = 0;
 }
 
-void writeValueArray(ValueArray* array, Value value) {
+void writeValueArray(VM* vm, ValueArray* array, Value value) {
     if (array->capacity < array->count + 1) {
         int oldCapacity = array->capacity;
         array->capacity = GROW_CAPACITY(oldCapacity);
@@ -40,7 +41,7 @@ void writeValueArray(ValueArray* array, Value value) {
     array->count++;
 }
 
-void freeValueArray(ValueArray* array) {
+void freeValueArray(VM* vm, ValueArray* array) {
     FREE_ARRAY(Value, array->values, array->capacity);
     initValueArray(array);
 }

@@ -24,6 +24,7 @@ for more information.
 #include "chunk.h"
 #include "table.h"
 #include "value.h"
+#include "vm_utils.h"
 
 /** Retrieve an object's type tag in order to identify it. */
 #define OBJ_TYPE(value)        (AS_OBJ(value)->type)
@@ -220,7 +221,7 @@ typedef enum {
  * Each object has one of these as its first field, allowing it to be cast to and
  * from an :c:expr:`Obj*`.
  */
-struct Obj {
+typedef struct Obj {
     /** Stores the type tag, allowing the object to be identified later */
     ObjType type;
     /**
@@ -235,14 +236,14 @@ struct Obj {
      * in the list.
      */
     struct Obj* next;
-};
+} Obj;
 
 /**
  * The raw function representation. These are never actually on the stack
  * or accessible to a user. For the most part, they're always stored inside
  * of an :c:struct:`ObjClosure`.
  */
-typedef struct {
+typedef struct ObjFunction {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -278,14 +279,14 @@ typedef struct {
  *         return argCount == 0;
  *     }
  */
-typedef bool (*NativeFn)(int argCount, Value* args);
+typedef bool (*NativeFn)(VM* vm, int argCount, Value* args);
 
 /**
  * A native function is a function in CRaven whose code is written and run with C.
  * This allows native functions to be very fast and perform low-level C operations,
  * perfect for standard library functions.
  */
-typedef struct {
+typedef struct ObjNative {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -300,7 +301,7 @@ typedef struct {
  * for it to be called on, but using a native function to allow native
  * method calls.
  */
-typedef struct {
+typedef struct ObjBoundNative {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -322,7 +323,7 @@ typedef struct {
  * the GC, meaning we don't have to worry as much about memory management when
  * using an ``ObjString``.
  */
-struct ObjString {
+typedef struct ObjString {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -342,7 +343,7 @@ struct ObjString {
      * it.
      */
     uint32_t hash;
-};
+} ObjString;
 
 /**
  * Stores a pointer to a value, ensuring it isn't freed even if it moves off of the
@@ -377,7 +378,7 @@ typedef struct ObjUpvalue {
     struct ObjUpvalue* next;
 } ObjUpvalue;
 
-typedef struct {
+typedef struct ObjClosure {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -388,7 +389,7 @@ typedef struct {
     int upvalueCount;
 } ObjClosure;
 
-typedef struct {
+typedef struct ObjClass {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -398,7 +399,7 @@ typedef struct {
     Table methods;
 } ObjClass;
 
-typedef struct {
+typedef struct ObjInstance {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -412,7 +413,7 @@ typedef struct {
  * Raven's most basic collection type, a simple wrapper over a
  * :c:struct:`ValueArray`.
  */
-typedef struct {
+typedef struct ObjList {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -428,7 +429,7 @@ typedef struct {
  * A simple wrapper over a :c:struct:`Table`, allowing the user
  * to interact with hash maps.
  */
-typedef struct {
+typedef struct ObjDict {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -440,7 +441,7 @@ typedef struct {
     Table values;
 } ObjDict;
 
-typedef struct {
+typedef struct ObjBoundMethod {
     /**
      * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
      * :c:expr:`Obj*`.
@@ -450,18 +451,18 @@ typedef struct {
     ObjClosure* method;
 } ObjBoundMethod;
 
-ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method);
-ObjBoundNative* newBoundNative(Value receiver, NativeFn method);
-ObjClass* newClass(ObjString* name);
-ObjClosure* newClosure(ObjFunction* function);
-ObjDict* newDict();
-ObjFunction* newFunction();
-ObjInstance* newInstance(ObjClass* klass);
-ObjList* newList();
-ObjNative* newNative(NativeFn function);
-ObjString* takeString(char* chars, int length);
-ObjString* copyString(const char* chars, int length);
-ObjUpvalue* newUpvalue(Value* slot);
+ObjBoundMethod* newBoundMethod(VM* vm, Value receiver, ObjClosure* method);
+ObjBoundNative* newBoundNative(VM* vm, Value receiver, NativeFn method);
+ObjClass* newClass(VM* vm, ObjString* name);
+ObjClosure* newClosure(VM* vm, ObjFunction* function);
+ObjDict* newDict(VM* vm);
+ObjFunction* newFunction(VM* vm);
+ObjInstance* newInstance(VM* vm, ObjClass* klass);
+ObjList* newList(VM* vm);
+ObjNative* newNative(VM* vm, NativeFn function);
+ObjString* takeString(VM* vm, char* chars, int length);
+ObjString* copyString(VM* vm, const char* chars, int length);
+ObjUpvalue* newUpvalue(VM* vm, Value* slot);
 void printObject(Value value);
 
 static inline bool isObjType(Value value, ObjType type) {

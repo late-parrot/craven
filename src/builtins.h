@@ -23,6 +23,8 @@ for more information.
 #include "common.h"
 #include "table.h"
 
+typedef struct VM VM;
+
 typedef struct {
     Table stringMembers;
     Table listMembers;
@@ -30,8 +32,8 @@ typedef struct {
 } Builtins;
 
 void initBuiltins(Builtins* builtins);
-void createBuiltins(Builtins* builtins);
-void markBuiltins(Builtins* builtins);
-void freeBuiltins(Builtins* builtins);
+void createBuiltins(VM* vm, Builtins* builtins);
+void markBuiltins(VM* vm, Builtins* builtins);
+void freeBuiltins(VM* vm, Builtins* builtins);
 
 #endif

@@ -22,6 +22,7 @@ for more information.
 
 #include "common.h"
 #include "value.h"
+#include "vm_utils.h"
 
 /**
  * Each enum value represents a different VM instruction, and each has its own
@@ -534,7 +535,7 @@ void initChunk(Chunk* chunk);
  *  can be either an opcode or a parameter to an opcode
  * :param line: the line that the byte was generated on, used for runtime errors
  */
-void writeChunk(Chunk* chunk, uint8_t byte, int line);
+void writeChunk(VM* vm, Chunk* chunk, uint8_t byte, int line);
 
 /**
  * Adds a constant to the chunk's constant table, for access at runtime. The
@@ -558,13 +559,13 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line);
  * :return: the integer offset of the value in the chunk's constant table, to be
  *  used by an ``OP_CONSTANT`` instruction in the VM
  */
-int addConstant(Chunk* chunk, Value value);
+int addConstant(VM* vm, Chunk* chunk, Value value);
 
 /**
  * Frees a chunk pointer and zeroes out its memory using :c:func:`initChunk`.
  * 
  * :param chunk: the chunk pointer to free
  */
-void freeChunk(Chunk* chunk);
+void freeChunk(VM* vm, Chunk* chunk);
 
 #endif
