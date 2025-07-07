@@ -273,6 +273,22 @@ typedef enum {
      */
     OP_SET_INDEX,
     /**
+     * Get the value in the VM's reserve slot, pushing it onto the stack.
+     * The reserve slot is for the VM to store a single value temporarily
+     * while performing other operations needing the stack.
+     * 
+     * STACK EFFECT: +1
+     */
+    OP_GET_RESERVE,
+    /**
+     * Set the value in the VM's reserve slot, taking the value from the stack.
+     * The reserve slot is for the VM to store a single value temporarily
+     * while performing other operations needing the stack.
+     * 
+     * STACK EFFECT: -1
+     */
+    OP_SET_RESERVE,
+    /**
      * Pop two operands and test for equality, pushing result.
      * 
      * STACK EFFECT: -1

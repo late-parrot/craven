@@ -278,6 +278,8 @@ static void beginScope() {
 static void endScope(VM* vm) {
     current->scopeDepth--;
 
+    Compiler* currentDB = current;
+
     while (current->localCount > 0 &&
         current->locals[current->localCount - 1].depth > current->scopeDepth) {
         if (current->locals[current->localCount - 1].isCaptured) {
@@ -826,38 +828,44 @@ static void expressionStatement(VM* vm) {
 
 static void forStatement(VM* vm, bool canAssign) {
     beginScope();
-    uint8_t global = parseVariable(vm, "Expect variable name after 'for'.");
+    consume(TOKEN_IDENTIFIER, "Expect variable name after 'for'.");
     Token varName = parser.previous;
-    EMIT_BYTE(OP_NIL);
-    defineVariable(vm, global);
     consume(TOKEN_IN, "Expect 'in' after variable name.");
 
     expression(vm);
-    EMIT_BYTES(OP_INT, 0);
+    EMIT_BYTES(OP_INT, 0); // Index
+    current->localCount += 2; // Iterator and index are kind of locals
 
     int loopStart = currentChunk()->count;
     int exitJump = EMIT_JUMP(OP_NEXT_JUMP);
     
-    uint8_t op;
-    int arg = resolveLocal(current, &varName);
-    if (arg != -1) {
-        op = OP_SET_LOCAL;
-    } else if ((arg = resolveUpvalue(current, &varName)) != -1) {
-        op = OP_SET_UPVALUE;
-    } else {
-        arg = identifierConstant(vm, &varName);
-        op = OP_SET_GLOBAL;
+    beginScope();
+    for (int i = current->localCount - 1; i >= 0; i--) {
+        Local* local = &current->locals[i];
+        if (local->depth != -1 && local->depth < current->scopeDepth) {
+            break; 
+        }
+        if (identifiersEqual(&varName, &local->name)) {
+            errorAt(&varName, "Already a variable with this name in this scope.");
+        }
     }
-    EMIT_BYTES(op, (uint8_t)arg);
-    EMIT_BYTE(OP_POP);
+    addLocal(varName);
+    uint8_t global = identifierConstant(vm, &varName);
+    defineVariable(vm, global);
 
     consume(TOKEN_LEFT_BRACE, "Expected '{' for 'for' body");
     block(vm);
     EMIT_BYTE(OP_POP);
+    endScope(vm);
 
     EMIT_LOOP(loopStart);
     patchJump(exitJump);
-    endScope(vm);
+    
+    endScope(vm); // Won't actually pop the iterator and index, just forget them
+    EMIT_BYTES(OP_POP, OP_POP);
+    current->localCount -= 2;
+    
+    EMIT_BYTE(OP_NIL); // Return value
 }
 
 static void ifStatement(VM* vm, bool canAssign) {
@@ -866,14 +874,26 @@ static void ifStatement(VM* vm, bool canAssign) {
     int thenJump = EMIT_JUMP(OP_JUMP_IF_FALSE);
     EMIT_BYTE(OP_POP);
     consume(TOKEN_LEFT_BRACE, "Expected '{' for 'if' body");
+    beginScope();
     block(vm);
+    EMIT_BYTE(OP_SET_RESERVE);
+    endScope(vm);
+    EMIT_BYTE(OP_GET_RESERVE);
     int elseJump = EMIT_JUMP(OP_JUMP);
     patchJump(thenJump);
     EMIT_BYTE(OP_POP);
 
     if (match(TOKEN_ELSE)) {
-        consume(TOKEN_LEFT_BRACE, "Expected '{' for 'if' body");
-        block(vm);
+        if (match(TOKEN_IF)) {
+            ifStatement(vm, false);
+        } else {
+            consume(TOKEN_LEFT_BRACE, "Expected '{' for 'else' body");
+            beginScope();
+            block(vm);
+            EMIT_BYTE(OP_SET_RESERVE);
+            endScope(vm);
+            EMIT_BYTE(OP_GET_RESERVE);
+        }
     }
     patchJump(elseJump);
 }
@@ -903,19 +923,21 @@ static void returnStatement(VM* vm, bool canAssign) {
 }
 
 static void whileStatement(VM* vm, bool canAssign) {
-    EMIT_BYTE(OP_NIL);
-
     int loopStart = currentChunk()->count;
     expression(vm);
 
     int exitJump = EMIT_JUMP(OP_JUMP_IF_FALSE);
-    EMIT_BYTES(OP_POP, OP_POP);
+    EMIT_BYTE(OP_POP); // Condition
     consume(TOKEN_LEFT_BRACE, "Expected '{' for 'while' body");
+    beginScope();
     block(vm);
+    EMIT_BYTE(OP_POP); // Block result
+    endScope(vm);
     EMIT_LOOP(loopStart);
 
     patchJump(exitJump);
-    EMIT_BYTE(OP_POP);
+    EMIT_BYTE(OP_POP); // Condition
+    EMIT_BYTE(OP_NIL); // Return value for loop
 }
 
 static void synchronize() {
@@ -964,7 +986,9 @@ static void block(VM* vm) {
         } else if (match(TOKEN_LEFT_BRACE)) {
             beginScope();
             block(vm);
+            EMIT_BYTE(OP_SET_RESERVE);
             endScope(vm);
+            EMIT_BYTE(OP_GET_RESERVE);
         } else {
             expression(vm);
             if (!match(TOKEN_SEMICOLON) && !check(TOKEN_RIGHT_BRACE))
@@ -978,7 +1002,9 @@ static void block(VM* vm) {
 static void blockExpr(VM* vm, bool canAssign) {
     beginScope();
     block(vm);
+    EMIT_BYTE(OP_SET_RESERVE);
     endScope(vm);
+    EMIT_BYTE(OP_SET_RESERVE);
 }
 
 static void statement(VM* vm) {
@@ -1001,7 +1027,9 @@ static void statement(VM* vm) {
     } else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block(vm);
+        EMIT_BYTE(OP_SET_RESERVE);
         endScope(vm);
+        EMIT_BYTE(OP_GET_RESERVE);
     } else {
         expressionStatement(vm);
     }

@@ -88,7 +88,7 @@ static InterpretResult run(VM* vm) {
 
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-        printf("          ");
+        printf("        |   ");
         for (Value* slot = vm->stack; slot < vm->stackTop; slot++) {
             printf("[ ");
             printValue(*slot);
@@ -212,6 +212,14 @@ static InterpretResult run(VM* vm) {
                 if (!setIndex(vm, object, index, value)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
+                break;
+            }
+            case OP_GET_RESERVE: {
+                PUSH(vm->reserve);
+                break;
+            }
+            case OP_SET_RESERVE: {
+                vm->reserve = POP();
                 break;
             }
             case OP_EQUAL: {

@@ -208,6 +208,7 @@ static void markRoots(VM* vm) {
 
     markTable(vm, &vm->globals);
     markBuiltins(vm, &vm->builtins);
+    markValue(vm, vm->reserve);
     markCompilerRoots(vm);
     markObject(vm, (Obj*)vm->initString);
 }

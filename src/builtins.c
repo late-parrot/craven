@@ -44,6 +44,7 @@ for more information.
 static bool clockNative(VM* vm, int argCount, Value* args) {
     CHECK_ARGCOUNT(0);
     PUSH(NUMBER_VAL((double)clock() / CLOCKS_PER_SEC));
+    return true;
 }
 
 static bool stringLengthNative(VM* vm, int argCount, Value* args) {

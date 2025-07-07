@@ -52,6 +52,7 @@ typedef struct VM {
     Builtins builtins;
     ObjString* initString;
     ObjUpvalue* openUpvalues;
+    Value reserve;
 
     size_t bytesAllocated;
     size_t nextGC;

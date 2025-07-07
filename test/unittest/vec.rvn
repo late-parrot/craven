@@ -1,0 +1,21 @@
+func vector(x, y) {
+    func add(other) {
+        vector(x+other("x"), y+other("y"))
+    }
+    func (mthd) {
+        if mthd == "x" { x }
+        else if mthd == "y" { y }
+        else if mthd == "add" { add }
+        else { "Unknown property" }
+    }
+}
+
+var a = vector(1,2);
+var b = vector(2,3);
+var c = a("add")(b);
+
+print c("x");
+print c("y");
+
+// UNITTEST
+// expected: 3\n5
