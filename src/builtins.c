@@ -73,11 +73,13 @@ void initBuiltins(Builtins* builtins) {
 }
 
 static void addBuiltin(VM* vm, Table* table, const char* name, NativeFn native) {
-    tableSet(vm,
-        table,
-        OBJ_VAL(copyString(vm, name, strlen(name))),
-        OBJ_VAL(newNative(vm, native))
-    );
+    Value key = OBJ_VAL(copyString(vm, name, strlen(name)));
+    push(vm, key);
+    Value val = OBJ_VAL(newNative(vm, native));
+    push(vm, val);
+    tableSet(vm, table, key, val);
+    pop(vm);
+    pop(vm);
 }
 
 void createBuiltins(VM* vm, Builtins* builtins) {

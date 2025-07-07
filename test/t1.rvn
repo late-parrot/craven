@@ -1,6 +1,49 @@
-var a = 0;
-{
-    var b = 1;
+var x = 0;
+
+while (x < 10) {
+    print x;
+    var y = 0;
+    while (y < 10) {
+        var z = 0;
+        var zl = [];
+        while (z < 10) {
+            var a = x + y;
+            var b = y + x;
+            var c = x - y;
+            var d = y - x;
+            var e = z + x;
+            var f = x + z;
+            var g = y + z;
+            var h = z + y;
+            var i = a + b;
+            var j = b + a;
+            var k = b - c;
+            var l = c + d;
+            var m = d + e;
+            var n = c - e;
+            var o = d + a;
+            var p = e - y;
+            zl.append(a);
+            zl.append(b);
+            zl.append(c);
+            zl.append(d);
+            zl.append(e);
+            zl.append(f);
+            zl.append(g);
+            zl.append(h);
+            zl.append(i);
+            zl.append(j);
+            zl.append(k);
+            zl.append(l);
+            zl.append(m);
+            zl.append(n);
+            zl.append(o);
+            zl.append(p);
+
+            z = z + 1;
+        }
+        y = y + 1;
+
+    }
+    x = x + 1;
 }
-print a;
-print b;

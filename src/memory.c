@@ -34,7 +34,7 @@ void* reallocate(VM* vm, void* pointer, size_t oldSize, size_t newSize) {
     vm->bytesAllocated += newSize - oldSize;
     if (newSize > oldSize) {
 #ifdef DEBUG_STRESS_GC
-        collectGarbage();
+        collectGarbage(vm);
 #endif
         if (vm->bytesAllocated > vm->nextGC) {
             collectGarbage(vm);
@@ -162,6 +162,12 @@ static void freeObject(VM* vm, Obj* object) {
             FREE(ObjClosure, object);
             break;
         }
+        case OBJ_DICT: {
+            ObjDict* dict = (ObjDict*)object;
+            freeTable(vm, &dict->values);
+            FREE(ObjDict, object);
+            break;
+        }
         case OBJ_FUNCTION: {
             ObjFunction* function = (ObjFunction*)object;
             freeChunk(vm, &function->chunk);
@@ -174,9 +180,12 @@ static void freeObject(VM* vm, Obj* object) {
             FREE(ObjInstance, object);
             break;
         }
-        case OBJ_LIST:
+        case OBJ_LIST: {
+            ObjList* list = (ObjList*)object;
+            freeValueArray(vm, &list->values);
             FREE(ObjList, object);
             break;
+        }
         case OBJ_NATIVE:
             FREE(ObjNative, object);
             break;
