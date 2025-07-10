@@ -113,6 +113,8 @@ static void blackenObject(VM* vm, Obj* object) {
             }
             break;
         }
+        case OBJ_DICT:
+            markTable(vm, &((ObjDict*)object)->values);
         case OBJ_FUNCTION: {
             ObjFunction* function = (ObjFunction*)object;
             markObject(vm, (Obj*)function->name);

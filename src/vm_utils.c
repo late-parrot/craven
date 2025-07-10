@@ -197,8 +197,12 @@ bool getIndex(VM* vm, Value object, Value index) {
         }
         case OBJ_LIST: {
             ObjList* list = AS_LIST(object);
-            double idx;
-            if (!IS_NUMBER(index) || (idx = AS_NUMBER(index)) != floor(idx)) {
+            if (!IS_NUMBER(index)) {
+                runtimeError(vm, "List index must be a number.");
+                return false;
+            }
+            double idx = AS_NUMBER(index);
+            if (idx != floor(idx)) {
                 runtimeError(vm, "List index must be a whole number.");
                 return false;
             }
@@ -211,8 +215,12 @@ bool getIndex(VM* vm, Value object, Value index) {
         }
         case OBJ_STRING: {
             ObjString* string = AS_STRING(object);
-            double idx;
-            if (!IS_NUMBER(index) || (idx = AS_NUMBER(index)) != floor(idx)) {
+            if (!IS_NUMBER(index)) {
+                runtimeError(vm, "String index must be a number.");
+                return false;
+            }
+            double idx = AS_NUMBER(index);
+            if (idx != floor(idx)) {
                 runtimeError(vm, "String index must be a whole number.");
                 return false;
             }
@@ -273,8 +281,12 @@ bool setIndex(VM* vm, Value object, Value index, Value value) {
         }
         case OBJ_LIST: {
             ObjList* list = AS_LIST(object);
-            double idx;
-            if (!IS_NUMBER(index) || (idx = AS_NUMBER(index)) != floor(idx)) {
+            if (!IS_NUMBER(index)) {
+                runtimeError(vm, "List index must be a number.");
+                return false;
+            }
+            double idx = AS_NUMBER(index);
+            if (idx != floor(idx)) {
                 runtimeError(vm, "List index must be a whole number.");
                 return false;
             }

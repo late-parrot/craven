@@ -45,10 +45,10 @@ static uint32_t hashValue(VM* vm, Value value) {
     else if (IS_NUMBER(value)) return AS_NUMBER(value);
     else if (IS_OBJ(value)) switch (OBJ_TYPE(value)) {
         case OBJ_STRING: return AS_STRING(value)->hash;
-        default:
-            fatalError(vm, "Unhashable type.");
-            return 0;
+        default: break;
     }
+    fatalError(vm, "Unhashable type.");
+    return 0;
 }
 
 static Entry* findEntry(VM* vm, Entry* entries, int capacity, Value key) {

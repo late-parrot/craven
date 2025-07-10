@@ -383,6 +383,8 @@ InterpretResult interpret(VM* vm, const char* source) {
     ObjFunction* function = compile(vm, source);
     if (function == NULL) return INTERPRET_COMPILE_ERROR;
 
+    resetStack(vm);
+
     PUSH(OBJ_VAL(function));
     ObjClosure* closure = newClosure(vm, function);
     POP();
