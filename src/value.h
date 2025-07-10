@@ -47,10 +47,9 @@ typedef struct ObjUpvalue ObjUpvalue;
 #define QNAN     ((uint64_t)0x7ffc000000000000)
 
 /**
- * A flag for NaN boxed ``nil`` values. If this and the :c:macro:`QNAN` masks are
- * both set, the value is ``nil``.
+ * A flag for NaN boxed empty values, mostly used for indication.
  */
-#define TAG_NIL   1 // 01.
+#define TAG_EMPTY 1 // 01.
 
 /**
  * A flag for NaN boxed ``false`` values. If this and the :c:macro:`QNAN` masks are
@@ -65,11 +64,6 @@ typedef struct ObjUpvalue ObjUpvalue;
 #define TAG_TRUE  3 // 11.
 
 /**
- * A flag for NaN boxed empty values, mostly used for indication.
- */
-#define TAG_EMPTY 3 // 100.
-
-/**
  * With the NaN boxing representation, all values are 64 bit integers, which
  * actually represent double-precision floats. If all of the exponent bits are set,
  * the value is treated as a NaN value, and we can for the most part stuff whatever
@@ -82,9 +76,6 @@ typedef uint64_t Value;
 
 /** Check if a NaN boxed value is a boolean. */
 #define IS_BOOL(value)      (((value) | 1) == TRUE_VAL)
-
-/** Check if a NaN boxed value is ``nil``. */
-#define IS_NIL(value)       ((value) == NIL_VAL)
 
 /** Check if a NaN boxed value is a number. */
 #define IS_NUMBER(value)    (((value) & QNAN) != QNAN)
@@ -144,9 +135,6 @@ typedef uint64_t Value;
 /** All ``true`` values are actually the same value, which is this one. */
 #define TRUE_VAL        ((Value)(uint64_t)(QNAN | TAG_TRUE))
 
-/** All ``nil`` values are actually the same value, which is this one. */
-#define NIL_VAL         ((Value)(uint64_t)(QNAN | TAG_NIL))
-
 /** Convert a C double into a NaN boxed value. */
 #define NUMBER_VAL(num) numToValue(num)
 
@@ -172,7 +160,6 @@ static inline Value numToValue(double num) {
 
 typedef enum {
     VAL_BOOL,
-    VAL_NIL, 
     VAL_NUMBER,
     VAL_OBJ,
     VAL_EMPTY
@@ -188,7 +175,6 @@ typedef struct {
 } Value;
 
 #define IS_BOOL(value)    ((value).type == VAL_BOOL)
-#define IS_NIL(value)     ((value).type == VAL_NIL)
 #define IS_NUMBER(value)  ((value).type == VAL_NUMBER)
 #define IS_OBJ(value)     ((value).type == VAL_OBJ)
 #define IS_EMPTY(value)   ((value).type == VAL_EMPTY)
@@ -198,7 +184,6 @@ typedef struct {
 #define AS_NUMBER(value)  ((value).as.number)
 
 #define BOOL_VAL(value)   ((Value){VAL_BOOL, {.boolean = value}})
-#define NIL_VAL           ((Value){VAL_NIL, {.number = 0}})
 #define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = value}})
 #define OBJ_VAL(object)   ((Value){VAL_OBJ, {.obj = (Obj*)object}})
 #define EMPTY_VAL         ((Value){VAL_EMPTY, {.number = 0}})

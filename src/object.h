@@ -56,6 +56,9 @@ for more information.
 /** Check to see if the value is an :c:struct:`ObjNative`. */
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
 
+/** Check to see if the value is an :c:struct:`ObjOption`. */
+#define IS_OPTION(value)       isObjType(value, OBJ_OPTION)
+
 /** Check to see if the value is an :c:struct:`ObjString`. */
 #define IS_STRING(value)       isObjType(value, OBJ_STRING)
 
@@ -164,7 +167,7 @@ for more information.
 #define AS_LIST(value)     ((ObjList*)AS_OBJ(value))
 
 /**
- * Cast the value to an :c:expr:`ObjNative*`.
+ * Cast the value to an :c:expr:`ObjNative*` and extrace the :c:type:`NativeFn`.
  * 
  * .. warning::
  *     Converting :c:expr:`Value` s to C objects is unsafe and must be guarded
@@ -175,6 +178,19 @@ for more information.
  *     a *really* good reason.
  */
 #define AS_NATIVE(value)       (((ObjNative*)AS_OBJ(value))->function)
+
+/**
+ * Cast the value to an :c:expr:`ObjOption*`.
+ * 
+ * .. warning::
+ *     Converting :c:expr:`Value` s to C objects is unsafe and must be guarded
+ *     with one of the ``IS_`` macros. Otherwise, the ``AS_`` macros could
+ *     reinterpret random bits of memory, causing segfaults or UB.
+ * 
+ *     Always, *always* guard ``AS_`` macros with ``IS_`` macros, unless you have
+ *     a *really* good reason.
+ */
+#define AS_OPTION(value)       (((ObjOption*)AS_OBJ(value)))
 
 /**
  * Cast the value to an :c:expr:`ObjString*`.
@@ -213,6 +229,7 @@ typedef enum {
     OBJ_INSTANCE,
     OBJ_LIST,
     OBJ_NATIVE,
+    OBJ_OPTION,
     OBJ_STRING,
     OBJ_UPVALUE
 } ObjType;
@@ -451,6 +468,16 @@ typedef struct ObjBoundMethod {
     ObjClosure* method;
 } ObjBoundMethod;
 
+typedef struct ObjOption {
+    /**
+     * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
+     * :c:expr:`Obj*`.
+     */
+    Obj obj;
+    Value value;
+    bool isNone;
+} ObjOption;
+
 ObjBoundMethod* newBoundMethod(VM* vm, Value receiver, ObjClosure* method);
 ObjBoundNative* newBoundNative(VM* vm, Value receiver, NativeFn method);
 ObjClass* newClass(VM* vm, ObjString* name);
@@ -460,6 +487,8 @@ ObjFunction* newFunction(VM* vm);
 ObjInstance* newInstance(VM* vm, ObjClass* klass);
 ObjList* newList(VM* vm);
 ObjNative* newNative(VM* vm, NativeFn function);
+ObjOption* newOption(VM* vm, Value value);
+ObjOption* newNone(VM* vm);
 ObjString* takeString(VM* vm, char* chars, int length);
 ObjString* copyString(VM* vm, const char* chars, int length);
 ObjUpvalue* newUpvalue(VM* vm, Value* slot);

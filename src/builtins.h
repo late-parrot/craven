@@ -29,6 +29,7 @@ typedef struct {
     Table stringMembers;
     Table listMembers;
     Table dictMembers;
+    Table optionMembers;
 } Builtins;
 
 void initBuiltins(Builtins* builtins);

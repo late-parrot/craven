@@ -43,7 +43,7 @@ with tokens.
         TOKEN_FOR
         TOKEN_FUN
         TOKEN_IF
-        TOKEN_NIL
+        TOKEN_NONE
         TOKEN_OR
         TOKEN_PRINT
         TOKEN_RETURN

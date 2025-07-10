@@ -117,6 +117,20 @@ ObjNative* newNative(VM* vm, NativeFn function) {
     return native;
 }
 
+ObjOption* newOption(VM* vm, Value value) {
+    ObjOption* option = ALLOCATE_OBJ(ObjOption, OBJ_OPTION);
+    option->value = value;
+    option->isNone = false;
+    return option;
+}
+
+ObjOption* newNone(VM* vm) {
+    ObjOption* option = ALLOCATE_OBJ(ObjOption, OBJ_OPTION);
+    option->value = EMPTY_VAL;
+    option->isNone = true;
+    return option;
+}
+
 static ObjString* allocateString(VM* vm, char* chars, int length, uint32_t hash) {
     ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
     string->length = length;
@@ -124,7 +138,7 @@ static ObjString* allocateString(VM* vm, char* chars, int length, uint32_t hash)
     string->hash = hash;
 
     PUSH(OBJ_VAL(string));
-    tableSet(vm, &vm->strings, OBJ_VAL(string), NIL_VAL);
+    tableSet(vm, &vm->strings, OBJ_VAL(string), EMPTY_VAL);
     POP();
 
     return string;
@@ -165,7 +179,7 @@ ObjString* copyString(VM* vm, const char* chars, int length) {
 
 ObjUpvalue* newUpvalue(VM* vm, Value* slot) {
     ObjUpvalue* upvalue = ALLOCATE_OBJ(ObjUpvalue, OBJ_UPVALUE);
-    upvalue->closed = NIL_VAL;
+    upvalue->closed = EMPTY_VAL;
     upvalue->location = slot;
     upvalue->next = NULL;
     return upvalue;
@@ -213,7 +227,7 @@ void printObject(Value value) {
         }
         case OBJ_DICT: {
             ObjDict* dict = AS_DICT(value);
-            Entry previous = {EMPTY_VAL, NIL_VAL};
+            Entry previous = {EMPTY_VAL, EMPTY_VAL};
             printf("dict {");
             for (Entry* e = dict->values.entries;
                 e - dict->values.entries < dict->values.capacity; e++) {
@@ -235,6 +249,14 @@ void printObject(Value value) {
         case OBJ_NATIVE:
             printf("<native fn>");
             break;
+        case OBJ_OPTION: {
+            ObjOption* option = AS_OPTION(value);
+            printf("<option ");
+            if (option->isNone) printf("none");
+            else printValue(option->value);
+            printf(">");
+            break;
+        }
         case OBJ_STRING:
             printf("%s", AS_CSTRING(value));
             break;

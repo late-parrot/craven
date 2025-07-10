@@ -66,10 +66,22 @@ static bool listLengthNative(VM* vm, int argCount, Value* args) {
     return true;
 }
 
+static bool optionUnwrapNative(VM* vm, int argCount, Value* args) {
+    CHECK_ARGCOUNT(0);
+    ObjOption* option = AS_OPTION(args[-1]);
+    if (option->isNone) {
+        runtimeError(vm, "Attempted to unwrap `none`.");
+        return false;
+    }
+    PUSH(option->value);
+    return true;
+}
+
 void initBuiltins(Builtins* builtins) {
     initTable(&builtins->stringMembers);
     initTable(&builtins->listMembers);
     initTable(&builtins->dictMembers);
+    initTable(&builtins->optionMembers);
 }
 
 static void addBuiltin(VM* vm, Table* table, const char* name, NativeFn native) {
@@ -89,16 +101,20 @@ void createBuiltins(VM* vm, Builtins* builtins) {
 
     addBuiltin(vm, &builtins->listMembers, "append", listAppendNative);
     addBuiltin(vm, &builtins->listMembers, "length", listLengthNative);
+
+    addBuiltin(vm, &builtins->optionMembers, "unwrap", optionUnwrapNative);
 }
 
 void markBuiltins(VM* vm, Builtins* builtins) {
     markTable(vm, &builtins->stringMembers);
     markTable(vm, &builtins->listMembers);
     markTable(vm, &builtins->dictMembers);
+    markTable(vm, &builtins->optionMembers);
 }
 
 void freeBuiltins(VM* vm, Builtins* builtins) {
     freeTable(vm, &builtins->stringMembers);
     freeTable(vm, &builtins->listMembers);
     freeTable(vm, &builtins->dictMembers);
+    freeTable(vm, &builtins->optionMembers);
 }

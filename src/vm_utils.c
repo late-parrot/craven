@@ -350,6 +350,17 @@ bool invoke(VM* vm, ObjString* name, int argCount) {
             runtimeError(vm, "Undefined method '%s'.", name->chars);
             return false;
         }
+        case OBJ_OPTION: {
+            Value method;
+            if (tableGet(vm, &vm->builtins.optionMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    callValue(vm, OBJ_VAL(newBoundNative(vm, receiver, AS_NATIVE(method))), argCount);
+                    return true;
+                }
+            }
+            runtimeError(vm, "Undefined method '%s'.", name->chars);
+            return false;
+        }
         default:
             break;
     }
@@ -412,6 +423,17 @@ bool getProperty(VM* vm, Value obj, ObjString* name) {
         case OBJ_DICT: {
             Value method;
             if (tableGet(vm, &vm->builtins.dictMembers, OBJ_VAL(name), &method)) {
+                if (IS_NATIVE(method)) {
+                    PUSH(OBJ_VAL(newBoundNative(vm, obj, AS_NATIVE(method))));
+                    return true;
+                }
+            }
+            runtimeError(vm, "Undefined property '%s'.", name->chars);
+            return false;
+        }
+        case OBJ_OPTION: {
+            Value method;
+            if (tableGet(vm, &vm->builtins.optionMembers, OBJ_VAL(name), &method)) {
                 if (IS_NATIVE(method)) {
                     PUSH(OBJ_VAL(newBoundNative(vm, obj, AS_NATIVE(method))));
                     return true;
@@ -485,7 +507,7 @@ void defineMethod(VM* vm, ObjString* name) {
 }
 
 bool isFalsey(Value value) {
-    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value))
+    return IS_OPTION(value) && AS_OPTION(value)->isNone || (IS_BOOL(value) && !AS_BOOL(value))
         || (IS_NUMBER(value) && AS_NUMBER(value) == 0);
 }
 

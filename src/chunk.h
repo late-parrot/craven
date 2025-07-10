@@ -39,7 +39,7 @@ typedef enum {
     /** 
      * Loads a constant from the constant table of the current callframe's
      * chunk and pushes it onto the stack. The index is usually given by
-     * :c:func:`addConstant`
+     * :c:func:`addConstant`.
      * 
      * :parameters:
      *  * **arrayOffset** -- byte operand
@@ -48,19 +48,25 @@ typedef enum {
      */
     OP_CONSTANT,
     /**
-     * Create a ``nil`` value and push it onto the stack
+     * Create a ``none`` value and push it onto the stack.
      * 
      * STACK EFFECT: +1
      */
-    OP_NIL,
+    OP_NONE,
     /**
-     * Create a ``true`` value and push it onto the stack
+     * Pop a value off of the stack and wrap it in an :c:expr:`ObjOption*`.
+     * 
+     * STACK EFFECT: 0
+     */
+    OP_SOME,
+    /**
+     * Create a ``true`` value and push it onto the stack.
      * 
      * STACK EFFECT: +1
      */
     OP_TRUE,
     /**
-     * Create a ``false`` value and push it onto the stack
+     * Create a ``false`` value and push it onto the stack.
      * 
      * STACK EFFECT: +1
      */

@@ -90,7 +90,7 @@ static Token errorToken(const char* message) {
     return token;
 }
 
-static void skipWhitespace() {
+static bool skipWhitespace() {
     for (;;) {
         char c = peek();
         switch (c) {
@@ -106,14 +106,22 @@ static void skipWhitespace() {
             case '/':
                 if (peekNext() == '/') {
                     while (peek() != '\n' && !isAtEnd()) advance();
+                } else if (peekNext() == '*') {
+                    advance();
+                    advance();
+                    while ((peek() != '*' || peekNext() != '/') && !isAtEnd()) advance();
+                    if (isAtEnd()) return false;
+                    advance();
+                    advance();
                 } else {
-                    return;
+                    return true;
                 }
                 break;
             default:
-                return;
+                return true;
         }
     }
+    return true;
 }
 
 static TokenType checkKeyword(int start, int length,
@@ -127,12 +135,13 @@ static TokenType checkKeyword(int start, int length,
 }
 
 static TokenType identifierType() {
+    int length = scanner.current - scanner.start;
     switch (scanner.start[0]) {
         case 'a': return checkKeyword(1, 2, "nd", TOKEN_AND);
         case 'c': return checkKeyword(1, 4, "lass", TOKEN_CLASS);
         case 'e': return checkKeyword(1, 3, "lse", TOKEN_ELSE);
         case 'f':
-            if (scanner.current - scanner.start > 1) {
+            if (length > 1) {
                 switch (scanner.start[1]) {
                     case 'a': return checkKeyword(2, 3, "lse", TOKEN_FALSE);
                     case 'o': return checkKeyword(2, 1, "r", TOKEN_FOR);
@@ -141,8 +150,7 @@ static TokenType identifierType() {
             }
             break;
         case 'i':
-            int length;
-            if ((length = scanner.current - scanner.start) > 1) {
+            if (length > 1) {
                 switch (scanner.start[1]) {
                     case 'f': return length == 2 ? TOKEN_IF : TOKEN_IDENTIFIER;
                     case 'n': return length == 2 ? TOKEN_IN : TOKEN_IDENTIFIER;
@@ -150,19 +158,26 @@ static TokenType identifierType() {
             }
             break; 
         case 'n':
-            if (scanner.current - scanner.start > 1) {
-                switch (scanner.start[1]) {
-                    case 'i': return checkKeyword(2, 1, "l", TOKEN_NIL);
-                    case 'o': return checkKeyword(2, 1, "t", TOKEN_NOT);
+            if (length > 2 && scanner.start[1] == 'o') {
+                switch (scanner.start[2]) {
+                    case 't': return length == 3 ? TOKEN_NOT : TOKEN_IDENTIFIER;
+                    case 'n': return checkKeyword(3, 1, "e", TOKEN_NONE);
                 }
             }
             break;
         case 'o': return checkKeyword(1, 1, "r", TOKEN_OR);
         case 'p': return checkKeyword(1, 4, "rint", TOKEN_PRINT);
         case 'r': return checkKeyword(1, 5, "eturn", TOKEN_RETURN);
-        case 's': return checkKeyword(1, 4, "uper", TOKEN_SUPER);
+        case 's':
+            if (length > 1) {
+                switch (scanner.start[1]) {
+                    case 'o': return checkKeyword(2, 2, "me", TOKEN_SOME);
+                    case 'u': return checkKeyword(2, 3, "per", TOKEN_SUPER);
+                }
+            }
+            break;
         case 't':
-            if (scanner.current - scanner.start > 1) {
+            if (length > 1) {
                 switch (scanner.start[1]) {
                     case 'h': return checkKeyword(2, 2, "is", TOKEN_THIS);
                     case 'r': return checkKeyword(2, 2, "ue", TOKEN_TRUE);
@@ -200,7 +215,7 @@ static Token string() {
 }
 
 Token scanToken() {
-    skipWhitespace();
+    if (!skipWhitespace()) return errorToken("Unterminated block comment.");
     scanner.start = scanner.current;
 
     if (isAtEnd()) return makeToken(TOKEN_EOF);

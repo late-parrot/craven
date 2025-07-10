@@ -40,7 +40,7 @@ void freeTable(VM* vm, Table* table) {
 }
 
 static uint32_t hashValue(VM* vm, Value value) {
-    if (IS_NIL(value) || IS_EMPTY(value)) return 0;
+    if (IS_EMPTY(value)) return 0;
     else if (IS_BOOL(value)) return AS_BOOL(value);
     else if (IS_NUMBER(value)) return AS_NUMBER(value);
     else if (IS_OBJ(value)) switch (OBJ_TYPE(value)) {
@@ -57,7 +57,7 @@ static Entry* findEntry(VM* vm, Entry* entries, int capacity, Value key) {
     for (;;) {
         Entry* entry = &entries[index];
         if (IS_EMPTY(entry->key)) {
-            if (IS_NIL(entry->value)) {
+            if (IS_EMPTY(entry->value)) {
                 return tombstone != NULL ? tombstone : entry;
             } else {
                 if (tombstone == NULL) tombstone = entry;
@@ -83,7 +83,7 @@ static void adjustCapacity(VM* vm, Table* table, int capacity) {
     Entry* entries = ALLOCATE(Entry, capacity);
     for (int i = 0; i < capacity; i++) {
         entries[i].key = EMPTY_VAL;
-        entries[i].value = NIL_VAL;
+        entries[i].value = EMPTY_VAL;
     }
 
     table->count = 0;
@@ -109,7 +109,7 @@ bool tableSet(VM* vm, Table* table, Value key, Value value) {
 
     Entry* entry = findEntry(vm, table->entries, table->capacity, key);
     bool isNewKey = IS_EMPTY(entry->key);
-    if (isNewKey && IS_NIL(entry->value)) table->count++;
+    if (isNewKey && IS_EMPTY(entry->value)) table->count++;
 
     entry->key = key;
     entry->value = value;
@@ -148,7 +148,7 @@ ObjString* tableFindString(Table* table, const char* chars,
     for (;;) {
         Entry* entry = &table->entries[index];
         if (IS_EMPTY(entry->key)) {
-            if (IS_NIL(entry->value)) return NULL;
+            if (IS_EMPTY(entry->value)) return NULL;
         } else {
             ObjString* string = AS_STRING(entry->key);
             if (string->length == length && string->hash == hash &&

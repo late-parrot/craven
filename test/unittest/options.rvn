@@ -1,0 +1,16 @@
+func increment() {
+    1
+}
+
+func increment(a) {
+    a+1
+}
+
+print 1; //print increment();
+print increment(5);
+
+var x = some(5);
+print x.unwrap();
+
+// UNITTEST
+// expected: 1\n6\n5

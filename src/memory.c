@@ -128,6 +128,9 @@ static void blackenObject(VM* vm, Obj* object) {
         case OBJ_LIST:
             markArray(vm, &((ObjList*)object)->values);
             break;
+        case OBJ_OPTION:
+            markValue(vm, ((ObjOption*)object)->value);
+            break;
         case OBJ_UPVALUE:
             markValue(vm, ((ObjUpvalue*)object)->closed);
             break;
@@ -188,6 +191,9 @@ static void freeObject(VM* vm, Obj* object) {
         }
         case OBJ_NATIVE:
             FREE(ObjNative, object);
+            break;
+        case OBJ_OPTION:
+            FREE(ObjOption, object);
             break;
         case OBJ_STRING: {
             ObjString* string = (ObjString*)object;

@@ -530,7 +530,7 @@ static void list(VM* vm, bool canAssign) {
 static void literal(VM* vm, bool canAssign) {
     switch (parser.previous.type) {
         case TOKEN_FALSE: EMIT_BYTE(OP_FALSE); break;
-        case TOKEN_NIL: EMIT_BYTE(OP_NIL); break;
+        case TOKEN_NONE: EMIT_BYTE(OP_NONE); break;
         case TOKEN_TRUE: EMIT_BYTE(OP_TRUE); break;
         default: return; // Unreachable.
     }
@@ -587,6 +587,13 @@ static void variable(VM* vm, bool canAssign) {
     } else {
         namedVariable(vm, parser.previous, canAssign);
     }
+}
+
+static void some(VM* vm, bool canAssign) {
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'some'.");
+    expression(vm);
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
+    EMIT_BYTE(OP_SOME);
 }
 
 static Token syntheticToken(const char* text) {
@@ -669,10 +676,11 @@ ParseRule rules[] = {
     [TOKEN_FOR]           = {forStatement,     NULL,   PREC_NONE},
     [TOKEN_FUNC]          = {funcDeclaration,  NULL,   PREC_NONE},
     [TOKEN_IF]            = {ifStatement,      NULL,   PREC_NONE},
-    [TOKEN_NIL]           = {literal,          NULL,   PREC_NONE},
+    [TOKEN_NONE]           = {literal,          NULL,   PREC_NONE},
     [TOKEN_OR]            = {NULL,             or_,    PREC_OR},
     [TOKEN_PRINT]         = {printStatement,   NULL,   PREC_NONE},
     [TOKEN_RETURN]        = {returnStatement,  NULL,   PREC_NONE},
+    [TOKEN_SOME]          = {some,             NULL,   PREC_NONE},
     [TOKEN_SUPER]         = {super_,           NULL,   PREC_NONE},
     [TOKEN_THIS]          = {this_,            NULL,   PREC_NONE},
     [TOKEN_TRUE]          = {literal,          NULL,   PREC_NONE},
@@ -814,7 +822,7 @@ static void varDeclaration(VM* vm, bool canAssign) {
     if (match(TOKEN_EQUAL)) {
         expression(vm);
     } else {
-        EMIT_BYTE(OP_NIL);
+        EMIT_BYTE(OP_NONE);
     }
     consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
     defineVariable(vm, global);
@@ -865,7 +873,7 @@ static void forStatement(VM* vm, bool canAssign) {
     EMIT_BYTES(OP_POP, OP_POP);
     current->localCount -= 2;
     
-    EMIT_BYTE(OP_NIL); // Return value
+    EMIT_BYTE(OP_NONE); // Return value
 }
 
 static void ifStatement(VM* vm, bool canAssign) {
@@ -937,7 +945,7 @@ static void whileStatement(VM* vm, bool canAssign) {
 
     patchJump(exitJump);
     EMIT_BYTE(OP_POP); // Condition
-    EMIT_BYTE(OP_NIL); // Return value for loop
+    EMIT_BYTE(OP_NONE); // Return value for loop
 }
 
 static void synchronize() {
@@ -965,7 +973,7 @@ static void expression(VM* vm) {
 }
 
 static void block(VM* vm) {
-    if (check(TOKEN_RIGHT_BRACE)) EMIT_BYTE(OP_NIL); // Empty block
+    if (check(TOKEN_RIGHT_BRACE)) EMIT_BYTE(OP_NONE); // Empty block
     while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)) {
         if (match(TOKEN_CLASS)) {
             classDeclaration(vm, false);

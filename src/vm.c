@@ -108,7 +108,8 @@ static InterpretResult run(VM* vm) {
                 PUSH(constant);
                 break;
             }
-            case OP_NIL: PUSH(NIL_VAL); break;
+            case OP_NONE: PUSH(OBJ_VAL(newNone(vm))); break;
+            case OP_SOME: PUSH(OBJ_VAL(newOption(vm, POP()))); break;
             case OP_TRUE: PUSH(BOOL_VAL(true)); break;
             case OP_FALSE: PUSH(BOOL_VAL(false)); break;
             case OP_INT: PUSH(NUMBER_VAL((double)READ_BYTE())); break;
