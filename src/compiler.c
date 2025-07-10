@@ -819,11 +819,8 @@ static void funcDeclaration(VM* vm, bool canAssign) {
 static void varDeclaration(VM* vm, bool canAssign) {
     uint8_t global = parseVariable(vm, "Expect variable name.");
     Token varName = parser.previous;
-    if (match(TOKEN_EQUAL)) {
-        expression(vm);
-    } else {
-        EMIT_BYTE(OP_NONE);
-    }
+    consume(TOKEN_EQUAL, "Expect '=' after variable name.");
+    expression(vm);
     consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration.");
     defineVariable(vm, global);
     namedVariable(vm, varName, false);

@@ -1,6 +1,6 @@
-var f1;
-var f2;
-var f3;
+var f1 = none;
+var f2 = none;
+var f3 = none;
 
 for i in [1,2,3] {
     var j = i;

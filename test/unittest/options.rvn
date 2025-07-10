@@ -1,5 +1,5 @@
 func increment() {
-    1
+    increment(0)
 }
 
 func increment(a) {
