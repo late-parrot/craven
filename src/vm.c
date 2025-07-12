@@ -66,7 +66,7 @@ void freeVM(VM* vm) {
     freeObjects(vm);
 }
 
-static InterpretResult run(VM* vm) {
+InterpretResult run(VM* vm) {
     CallFrame* frame = &vm->frames[vm->frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)

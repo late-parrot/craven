@@ -20,6 +20,7 @@ for more information.
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -30,6 +31,7 @@ for more information.
 #include "memory.h"
 #include "value.h"
 #include "vm_utils.h"
+#include "vm.h"
 
 #define PUSH(value) \
     do { \
@@ -351,6 +353,16 @@ bool invoke(VM* vm, ObjString* name, int argCount) {
             runtimeError(vm, "Undefined method '%s'.", name->chars);
             return false;
         }
+        case OBJ_MODULE: {
+            ObjModule* module = AS_MODULE(receiver);
+            Value value;
+            if (tableGet(vm, &module->fields, OBJ_VAL(name), &value)) {
+                vm->stackTop[-argCount - 1] = value;
+                return callValue(vm, value, argCount);
+            }
+            runtimeError(vm, "Undefined property '%s'.", name->chars);
+            return false;
+        }
         case OBJ_DICT: {
             Value method;
             if (tableGet(vm, &vm->builtins.dictMembers, OBJ_VAL(name), &method)) {
@@ -432,6 +444,18 @@ bool getProperty(VM* vm, Value obj, ObjString* name) {
             runtimeError(vm, "Undefined property '%s'.", name->chars);
             return false;
         }
+        case OBJ_MODULE: {
+            ObjModule* module = AS_MODULE(obj);
+
+            Value property;
+            if (tableGet(vm, &module->fields, OBJ_VAL(name), &property)) {
+                POP();
+                PUSH(property);
+                return true;
+            }
+            runtimeError(vm, "Undefined property '%s'.", name->chars);
+            return false;
+        }
         case OBJ_DICT: {
             Value method;
             if (tableGet(vm, &vm->builtins.dictMembers, OBJ_VAL(name), &method)) {
@@ -474,7 +498,7 @@ bool setProperty(VM* vm, Value obj, ObjString* name, Value value) {
         default:
             break;
     }
-    runtimeError(vm, "Value has no fields.");
+    runtimeError(vm, "Cannot assign properties on value.");
     return false;
 }
 
@@ -538,4 +562,40 @@ bool concatenate(VM* vm) {
     POP();
     PUSH(OBJ_VAL(result));
     return true;
+}
+
+static InterpretResult importSource(const char* source, ObjModule* module) {
+    VM vm;
+    initVM(&vm);
+
+    ObjFunction* function = compile(&vm, source);
+    if (function == NULL) return INTERPRET_COMPILE_ERROR;
+
+    resetStack(&vm);
+
+    if (!push(&vm, OBJ_VAL(function))) {
+        runtimeError(&vm, "Cannot push value.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    ObjClosure* closure = newClosure(&vm, function);
+    pop(&vm);
+    if (!push(&vm, OBJ_VAL(closure))) {
+        runtimeError(&vm, "Cannot push value.");
+        return INTERPRET_RUNTIME_ERROR;
+    }
+    callClosure(&vm, closure, 0);
+
+    InterpretResult result = run(&vm);
+    if (result != INTERPRET_OK) return result;
+
+    tableAddAll(&vm, &vm.globals, &module->fields);
+    return result;
+}
+
+InterpretResult importFile(const char* path, ObjModule* module) {
+    char* source = readFile(path);
+    InterpretResult result = importSource(source, module);
+    free(source); 
+
+    return result;
 }

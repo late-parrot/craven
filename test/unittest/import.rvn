@@ -1,0 +1,6 @@
+var importHelper = import("test/unittest/importHelper.rvn");
+
+print importHelper.x;
+
+// UNITTEST
+// expected: 5

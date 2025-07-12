@@ -111,6 +111,13 @@ ObjList* newList(VM* vm) {
     return list;
 }
 
+ObjModule* newModule(VM* vm, ObjString* name) {
+    ObjModule* module = ALLOCATE_OBJ(ObjModule, OBJ_MODULE);
+    module->name = name;
+    initTable(&module->fields);
+    return module;
+}
+
 ObjNative* newNative(VM* vm, NativeFn function) {
     ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
     native->function = function;
@@ -223,6 +230,11 @@ void printObject(Value value) {
                     printf(", ");
             }
             printf("]");
+            break;
+        }
+        case OBJ_MODULE: {
+            ObjModule* module = AS_MODULE(value);
+            printf("<module %s>", module->name->chars);
             break;
         }
         case OBJ_DICT: {

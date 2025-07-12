@@ -28,6 +28,7 @@ typedef uint64_t Value;
 typedef struct Obj Obj;
 typedef struct ObjClass ObjClass;
 typedef struct ObjClosure ObjClosure;
+typedef struct ObjModule ObjModule;
 typedef struct ObjString ObjString;
 typedef struct ObjUpvalue ObjUpvalue;
 typedef bool (*NativeFn)(VM* vm, int argCount, Value* args);
@@ -92,5 +93,6 @@ void closeUpvalues(VM* vm, Value* last);
 void defineMethod(VM* vm, ObjString* name);
 bool isFalsey(Value value);
 bool concatenate(VM* vm);
+InterpretResult importFile(const char* path, ObjModule* module);
 
 #endif

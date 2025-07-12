@@ -53,6 +53,9 @@ for more information.
 /** Check to see if the value is an :c:struct:`ObjList`. */
 #define IS_LIST(value)         isObjType(value, OBJ_LIST)
 
+/** Check to see if the value is an :c:struct:`ObjModule`. */
+#define IS_MODULE(value)       isObjType(value, OBJ_MODULE)
+
 /** Check to see if the value is an :c:struct:`ObjNative`. */
 #define IS_NATIVE(value)       isObjType(value, OBJ_NATIVE)
 
@@ -167,6 +170,19 @@ for more information.
 #define AS_LIST(value)     ((ObjList*)AS_OBJ(value))
 
 /**
+ * Cast the value to an :c:expr:`ObjModule*`.
+ * 
+ * .. warning::
+ *     Converting :c:expr:`Value` s to C objects is unsafe and must be guarded
+ *     with one of the ``IS_`` macros. Otherwise, the ``AS_`` macros could
+ *     reinterpret random bits of memory, causing segfaults or UB.
+ * 
+ *     Always, *always* guard ``AS_`` macros with ``IS_`` macros, unless you have
+ *     a *really* good reason.
+ */
+#define AS_MODULE(value)     ((ObjModule*)AS_OBJ(value))
+
+/**
  * Cast the value to an :c:expr:`ObjNative*` and extrace the :c:type:`NativeFn`.
  * 
  * .. warning::
@@ -228,6 +244,7 @@ typedef enum {
     OBJ_FUNCTION,
     OBJ_INSTANCE,
     OBJ_LIST,
+    OBJ_MODULE,
     OBJ_NATIVE,
     OBJ_OPTION,
     OBJ_STRING,
@@ -442,6 +459,16 @@ typedef struct ObjList {
     ValueArray values;
 } ObjList;
 
+typedef struct ObjModule {
+    /**
+     * The header :c:struct:`Obj`, here to allow bookkeeping and casting to
+     * :c:expr:`Obj*`.
+     */
+    Obj obj;
+    ObjString* name;
+    Table fields;
+} ObjModule;
+
 /**
  * A simple wrapper over a :c:struct:`Table`, allowing the user
  * to interact with hash maps.
@@ -486,6 +513,7 @@ ObjDict* newDict(VM* vm);
 ObjFunction* newFunction(VM* vm);
 ObjInstance* newInstance(VM* vm, ObjClass* klass);
 ObjList* newList(VM* vm);
+ObjModule* newModule(VM* vm, ObjString* name);
 ObjNative* newNative(VM* vm, NativeFn function);
 ObjOption* newOption(VM* vm, Value value);
 ObjOption* newNone(VM* vm);

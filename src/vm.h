@@ -25,6 +25,7 @@ for more information.
 
 void initVM(VM* vm);
 void freeVM(VM* vm);
+InterpretResult run(VM* vm);
 InterpretResult interpret(VM* vm, const char* source);
 
 #endif

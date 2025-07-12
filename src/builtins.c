@@ -41,9 +41,29 @@ for more information.
         } \
     } while (false)
 
+#define CHECK_TYPE(value, isMacro, typename) \
+    do { \
+        if (!isMacro(value)) { \
+            runtimeError(vm, "Expected value of type %s.", typename); \
+            return false; \
+        } \
+    } while (false)
+
 static bool clockNative(VM* vm, int argCount, Value* args) {
     CHECK_ARGCOUNT(0);
     PUSH(NUMBER_VAL((double)clock() / CLOCKS_PER_SEC));
+    return true;
+}
+
+static bool importNative(VM* vm, int argCount, Value* args) {
+    CHECK_ARGCOUNT(1);
+    CHECK_TYPE(args[0], IS_STRING, "string");
+    ObjModule* module = newModule(vm, AS_STRING(args[0]));
+    if (importFile(AS_CSTRING(args[0]), module) != INTERPRET_OK) {
+        runtimeError(vm, "Above error while importing module from %s", AS_CSTRING(args[0]));
+        return false;
+    }
+    PUSH(OBJ_VAL(module));
     return true;
 }
 
@@ -96,6 +116,7 @@ static void addBuiltin(VM* vm, Table* table, const char* name, NativeFn native) 
 
 void createBuiltins(VM* vm, Builtins* builtins) {
     defineNative(vm, "clock", clockNative);
+    defineNative(vm, "import", importNative);
 
     addBuiltin(vm, &builtins->stringMembers, "length", stringLengthNative);
 
