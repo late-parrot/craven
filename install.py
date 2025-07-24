@@ -4,6 +4,15 @@ import subprocess
 from pathlib import Path
 
 
+def input_tty(prompt=""):
+    try:
+        with open("/dev/tty", "r") as tty_in:
+            sys.stdout.write(prompt)
+            sys.stdout.flush()
+            return tty_in.readline().strip()
+    except FileNotFoundError:
+        sys.exit("Cannot access terminal input (/dev/tty). Please download install.py from GitHub and run it normally.")
+
 def abort(msg="Installation halted by user, aborting..."):
     print(msg)
     sys.exit()
@@ -14,13 +23,13 @@ def ask_option(prompt, *options):
         print(f"  {i+1}. {o}" + (" (default)" if i==0 else ""))
     n = len(options)
     try:
-        response = input(f"Enter for default or q to abort: ").strip()
+        response = input_tty(f"Enter for default or q to abort: ").strip()
         while response not in {str(i+1) for i in range(n)} and response != "":
             if response in {"q", "Q"}:
                 print()
                 abort()
             print(f"Invalid response. Please provide a single number 1-{n}.")
-            response = input(f"Enter for default or q to abort: ").strip()
+            response = input_tty(f"Enter for default or q to abort: ").strip()
     except EOFError:
         print("\n")
         abort()
@@ -30,7 +39,7 @@ def ask_option(prompt, *options):
 def skippable_input(prompt, default=""):
     print(prompt)
     try:
-        response = input("Enter to skip or q to abort: ").strip()
+        response = input_tty("Enter to skip or q to abort: ").strip()
     except EOFError:
         print("\n")
         abort()
@@ -61,13 +70,13 @@ def main():
                     "No, use a different directory"):
         case 1: pass
         case 2:
-            main_dir = Path(input("Path for installation: "))
+            main_dir = Path(input_tty("Path for installation: "))
 
     source_dir = main_dir / "source"
     build_dir = source_dir / "build"
     bin_dir = main_dir / "bin"
 
-    #run(["git", "clone", "https://github.com/late-parrot/craven.git", source_dir], capture_output=True)
+    run(["git", "clone", "https://github.com/late-parrot/craven.git", source_dir], capture_output=True)
 
 
     if not build_dir.exists():
@@ -93,7 +102,7 @@ def main():
                     "Yes, add this directory to PATH using ~/.bashrc or a similar file",
                     "No, I don't want the raven binary on PATH"):
             case 1:
-                bashrc = Path(input("Path to .bashrc or similar file: "))
+                bashrc = Path(input_tty("Path to .bashrc or similar file: "))
                 is_empty = not bashrc.exists() or bashrc.read_text() == ""
                 with bashrc.open("a") as f:
                     f.write(("\n" if not is_empty else "") +
