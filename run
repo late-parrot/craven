@@ -1,4 +1,0 @@
-#!/usr/bin/bash
-
-gcc $(find src/*.c) -lm -o build/craven.out
-./build/craven.out "$@"

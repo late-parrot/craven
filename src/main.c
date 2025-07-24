@@ -22,6 +22,7 @@ for more information.
 #include <string.h>
 
 #include "common.h"
+#include "config.h"
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
@@ -82,9 +83,13 @@ int main(int argc, const char* argv[]) {
     if (argc == 1) {
         repl(&vm);
     } else if (argc == 2) {
-        runFile(&vm, argv[1]);
+        if (strcmp(argv[1], "-V") == 0) {
+            printf("CRaven v%d.%d.%d\n", CRAVEN_VERSION_MAJOR, CRAVEN_VERSION_MINOR, CRAVEN_VERSION_PATCH);
+        } else {
+            runFile(&vm, argv[1]);
+        }
     } else {
-        fprintf(stderr, "Usage: craven [path]\n");
+        fprintf(stderr, "Usage: raven [path]\n");
         exit(64);
     }
 
