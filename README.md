@@ -35,24 +35,20 @@ As you can see, Raven supports complex features such as closures, and we can see
 Raven's expression-orientation at work here -- the last value in a function is
 automatically returned, and we use an inline `if` statement in the `fac` function.
 
-## Building and install
+## Install
 
-For now, Raven does not have a full installer or build system. Instead, you can
-clone the repository, and then build it using the following commands:
+Raven provides a simple installation wizard, which requires Python and CMake to work
+(both of these are installed on virtually every system under the sun). Run this command,
+preferably at your home directory:
 
-```
-gcc $(find src/*.c) -lm -o build/craven.out
-```
-
-This will build the project and place the executable at `build/craven.out`. You can
-now run Raven with:
-
-```
-./build/craven.out [FILE]
+```sh
+curl -s https://raw.githubusercontent.com/late-parrot/craven/refs/heads/main/install.py | python
 ```
 
-Providing a file is optional, and if no file is provided, a REPL session will be
-started.
+On some systems you may need to change `python` to `python3`. Currently there are no
+configuration flags that you can pass to CMake or the build command, so simply leave
+these blank. The wizard will clone this repository, run CMake and build the project,
+then will optionally add the binary to `PATH` and run the unittests.
 
 ## Contributing
 
