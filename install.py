@@ -38,11 +38,7 @@ def ask_option(prompt, *options):
 
 def skippable_input(prompt, default=""):
     print(prompt)
-    try:
-        response = input_tty("Enter to skip or q to abort: ").strip()
-    except EOFError:
-        print("\n")
-        abort()
+    response = input_tty("Enter to skip or q to abort: ").strip()
     print()
     if response == "q": abort()
     return response if response != "" else default
@@ -50,7 +46,7 @@ def skippable_input(prompt, default=""):
 def run(*args, **kwargs):
     result = subprocess.run(*args, **kwargs)
     if result.returncode != 0:
-        abort("\nError detected, aborting...")
+        abort("\nError detected. Aborting...")
     return result
 
 
@@ -58,7 +54,7 @@ def main():
     print("\n".join([x.strip() for x in """
         Welcome to the Raven installation wizard!
         For any of these questions, simply press Enter to use the default,
-        and enter "q" or press Ctrl+D or Ctrl+C to abort if desired.
+        and enter "q" or press Ctrl+C to abort if desired. (Ctrl+D will NOT work)
     """.strip().splitlines()]))
     print()
 
@@ -67,10 +63,17 @@ def main():
 
     match ask_option(f"Raven will be installed into '{main_dir}'. Is this okay?",
                     "Yes, continue installation at this directory",
-                    "No, use a different directory"):
+                    "No, use a different directory (must be empty)"):
         case 1: pass
         case 2:
-            main_dir = Path(input_tty("Path for installation: "))
+            main_dir = Path(input_tty("Path for installation: ")).expanduser().resolve()
+            if main_dir.exists() and not main_dir.is_dir():
+                abort("Tried to use file as directory. Aborting...")
+
+    if not main_dir.exists():
+        main_dir.mkdir()
+    if any(main_dir.iterdir()): # Contains files
+        abort("Requires an empty directory. Aborting...")
 
     source_dir = main_dir / "source"
     build_dir = source_dir / "build"
@@ -102,12 +105,14 @@ def main():
                     "Yes, add this directory to PATH using ~/.bashrc or a similar file",
                     "No, I don't want the raven binary on PATH"):
             case 1:
-                bashrc = Path(input_tty("Path to .bashrc or similar file: "))
-                is_empty = not bashrc.exists() or bashrc.read_text() == ""
+                bashrc = Path(input_tty("Path to .bashrc or similar file: ")).expanduser().resolve()
+                if not bashrc.exists() or not bashrc.is_file():
+                    abort("\nFile not found. Aborting...")
+                is_empty = bashrc.read_text() == ""
                 with bashrc.open("a") as f:
                     f.write(("\n" if not is_empty else "") +
                             f"# Add Raven bin directory to PATH\nexport PATH=\"$PATH{os.pathsep}{bin_dir}\"\n")
-                print("You will need to either source ~/.bashrc or restart the terminal instance to see the effect.\n")
+                print("\nYou will need to either source this file or restart the terminal to see the effect.\n")
             case 2: pass
     
 
@@ -130,6 +135,10 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print("\n")
         abort()
+    except Exception as e:
+        print(e)
+        print()
+        abort("Error detected. Aborting...")
