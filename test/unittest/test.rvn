@@ -47,5 +47,4 @@ func bar() {
 print bar();
 
 // UNITTEST
-// name: full test
 // expected: Hello, world!\n3.6288e+06\n5\n5\ntrue\nfalse\n0\n1\n1\n1\n0\n0\n0\n1\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n10\n8
