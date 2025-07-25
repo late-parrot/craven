@@ -19,18 +19,17 @@ Raven is also expression-oriented. This means that *any* code you write can be
 considered an expression, which in turn means that instead of code like this
 
 ```
-var bar = none;
-if foo == 1 {
-    bar = 1;
+if foo == 0 {
+    bar(1);
 } else {
-    bar = foo;
+    bar(foo);
 }
 ```
 
 You can write code like this
 
 ```
-var bar = if foo == 1 { 1 } else { foo };
+bar(if foo == 0 { 1 } else { foo });
 ```
 
 This is an extremely powerful feature, and can be used in a multitude of ways.
